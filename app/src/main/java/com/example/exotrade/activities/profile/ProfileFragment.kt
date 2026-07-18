@@ -92,7 +92,16 @@ class ProfileFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        fetchProfileData()
+        if (!isHidden) {
+            fetchProfileData()
+        }
+    }
+
+    override fun onHiddenChanged(hidden: Boolean) {
+        super.onHiddenChanged(hidden)
+        if (!hidden) {
+            fetchProfileData()
+        }
     }
 
     private fun fetchProfileData() {

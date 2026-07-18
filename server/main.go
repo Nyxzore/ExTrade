@@ -28,6 +28,9 @@ func main() {
 
 	r := gin.Default()
 
+	// Trust only localhost as a proxy (recommended for cloudflared on same machine)
+	r.SetTrustedProxies([]string{"127.0.0.1"})
+
 	// Legacy Static Page
 	r.StaticFile("/get-app", "./get-app.html")
 	r.StaticFile("/exotrade-api-docs.html", "./exotrade-api-docs.html")
