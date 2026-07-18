@@ -103,7 +103,7 @@ object Helpers {
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val response: String = ExoTradeApplication.container.apiService.postForm(
-                    "messaging/get_conversations.php",
+                    "messaging/get_conversations",
                     session.authParams()
                 )
                 val json = Json.parseToJsonElement(response).jsonObject
@@ -219,7 +219,7 @@ object Helpers {
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val response: String = ExoTradeApplication.container.apiService.postForm(
-                    "admin/get_notifications.php",
+                    "admin/get_notifications",
                     session.authParams()
                 )
                 val json = Json.parseToJsonElement(response).jsonObject

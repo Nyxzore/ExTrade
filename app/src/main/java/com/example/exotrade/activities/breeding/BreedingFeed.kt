@@ -183,7 +183,7 @@ class BreedingFeed : AppCompatActivity() {
         params["id"] = id
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("breeding/delete_breeding_listing.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("breeding/delete_breeding_listing", params)
                 val json = Json.parseToJsonElement(response).jsonObject
                 if (json["status"]?.jsonPrimitive?.content == "success") {
                     Toast.makeText(this@BreedingFeed, "Deleted", Toast.LENGTH_SHORT).show()
@@ -200,13 +200,13 @@ class BreedingFeed : AppCompatActivity() {
         val matchListingId = intent.getStringExtra("match_listing_id")
         val endpoint = if (matchListingId != null) {
             params["listing_id"] = matchListingId
-            "breeding/find_breeding_matches.php"
+            "breeding/find_breeding_matches"
         } else {
             params["offset"] = currentOffset.toString()
             params["seed"] = currentSeed
             if (searchQuery.isNotEmpty()) params["search"] = searchQuery
             currentBreedingType?.let { params["breeding_type"] = it }
-            "breeding/get_breeding_listings.php"
+            "breeding/get_breeding_listings"
         }
 
         lifecycleScope.launch {

@@ -123,7 +123,7 @@ class ChatActivity : AppCompatActivity(), MessageAdapter.OnUserClickListener {
 
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.get("messaging/get_messages.php", params)
+                val response: String = ExoTradeApplication.container.apiService.get("messaging/get_messages", params)
                 val json = Json.parseToJsonElement(response).jsonObject
                 if (json["status"]?.jsonPrimitive?.content == "success") {
                     val arr = json["messages"]?.jsonArray
@@ -268,7 +268,7 @@ class ChatActivity : AppCompatActivity(), MessageAdapter.OnUserClickListener {
                 params["body"] = result.ciphertext
                 params["nonce"] = result.nonce
 
-                val response: String = ExoTradeApplication.container.apiService.postForm("messaging/send_message.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("messaging/send_message", params)
                 val json = Json.parseToJsonElement(response).jsonObject
                 if (json["status"]?.jsonPrimitive?.content == "success") {
                     optimisticMsg.isSending = false
@@ -306,7 +306,7 @@ class ChatActivity : AppCompatActivity(), MessageAdapter.OnUserClickListener {
                 params["body"] = result.ciphertext
                 params["nonce"] = result.nonce
 
-                ExoTradeApplication.container.apiService.postForm<String>("messaging/send_message.php", params)
+                ExoTradeApplication.container.apiService.postForm<String>("messaging/send_message", params)
                 fetchMessages(true)
             } catch (ignored: Exception) {}
         }
@@ -318,7 +318,7 @@ class ChatActivity : AppCompatActivity(), MessageAdapter.OnUserClickListener {
         params["conversation_id"] = cid
         lifecycleScope.launch {
             try {
-                ExoTradeApplication.container.apiService.postForm<String>("messaging/mark_read.php", params)
+                ExoTradeApplication.container.apiService.postForm<String>("messaging/mark_read", params)
             } catch (e: Exception) {}
         }
     }

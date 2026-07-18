@@ -142,7 +142,7 @@ class CreateAccount : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("auth/auth.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("auth/auth", params)
                 val json = Json.parseToJsonElement(response).jsonObject
                 if ("success" == json["status"]?.jsonPrimitive?.content) {
                     val uuid = json["uuid"]?.jsonPrimitive?.content ?: ""

@@ -8,7 +8,7 @@ A specialized module for finding breeding partners for animals.
 - `CreateBreedingListing`: Form tailored for breeding parameters (e.g., loan terms).
 
 ## Matching Engine
-The system includes a matching feature (Legacy PHP: `breeding/find_breeding_matches.php` - **Deprecated**) that automatically finds animals of:
+The system includes a matching feature (`breeding/find_breeding_matches`) that automatically finds animals of:
 1. The same species (via `SpeciesRepository`).
 2. The opposite sex.
 3. Belonging to different owners.

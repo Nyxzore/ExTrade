@@ -32,7 +32,7 @@ class SpeciesRepository(private val apiService: ApiService, private val context:
         if (!force && speciesCache.isNotEmpty()) return
         
         try {
-            val response: String = apiService.get("listings/get_all_species.php")
+            val response: String = apiService.get("listings/get_all_species")
             val root = Json.parseToJsonElement(response).jsonObject
             if (root["status"]?.toString()?.contains("success") == true) {
                 val data = root["species"]?.jsonArray ?: return

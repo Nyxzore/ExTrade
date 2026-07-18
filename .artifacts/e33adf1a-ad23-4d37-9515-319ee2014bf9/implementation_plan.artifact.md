@@ -1,79 +1,48 @@
-# Implementation Plan: Port PHP Endpoints to Go
+# Implementation Plan: Complete Migration from PHP to Go
 
-This plan outlines the systematic porting of legacy PHP endpoints to the Go backend, ensuring behavioral parity with the existing Android client.
-
-## User Review Required
-
-> [!IMPORTANT]
-> - All Go handlers will use the established `utils.SendSuccess`/`utils.SendError` pattern to maintain consistent JSON response envelopes.
-> - Authentication and authorization checks will be strictly ported to match the legacy logic.
-> - No changes will be made to the Android client; Go routes will be registered using identical `.php` paths.
+The goal is to finalize the transition to the Go backend by removing all PHP-style route suffixes (`.php`), updating the Android client to use clean API paths, and deleting the legacy PHP source code.
 
 ## Proposed Changes
 
-The porting will proceed in the following groups:
+### 1. Go Server Refactoring
+#### [MODIFY] [main.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/main.go)
+- Remove `.php` from all registered routes.
+- Update `r.StaticFile("/get-app.php", ...)` to a cleaner path like `/get-app`.
+- Standardize on clean, extension-less paths.
 
-### 1. Core Endpoints
-- **[NEW] [core.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/internal/api/handlers/core.go)**:
-    - `core/get_versions.php`
-    - `core/report_item.php`
-- **[NEW] [social.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/pkg/utils/social.go)**: Port shared link normalization logic from `core/social_helpers.php`.
-- **[MODIFY] [main.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/main.go)**:
-    - Register core routes.
-    - Serve `get-app.php` (APK download info/page).
+### 2. Android Client Update
+#### [MODIFY] [Multiple Files](file:///home/nyxzore/AndroidStudioProjects/exotrade/app/src/main/java/com/example/exotrade/)
+- Use a project-wide search and replace to remove `.php` from all API endpoint strings in Kotlin code.
+- Impacted files include:
+    - `SpeciesRepository.kt`
+    - `AdminActivity.kt`
+    - `BreedingFeed.kt`
+    - `ChatActivity.kt`
+    - `BrowseListingsViewModel.kt`
+    - (and many others identified in the research phase)
 
-### 2. Profile Endpoints
-- **[NEW] [profile.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/internal/api/handlers/profile.go)**:
-    - `profile/get_profile.php`
-    - `profile/update_profile.php`
+### 3. Legacy Code Cleanup
+#### [DELETE] [php_variant/](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/php_variant/)
+- Permanently remove the `server/php_variant/` directory and its contents.
 
-### 3. Listings (Remaining)
-- **[MODIFY] [listings.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/internal/api/handlers/listings.go)**:
-    - `listings/create_listing.php`
-    - `listings/update_listing.php`
-    - `listings/delete_listing.php`
-    - `listings/get_listing_details.php`
-
-### 4. Breeding (Remaining)
-- **[MODIFY] [breeding.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/internal/api/handlers/breeding.go)**:
-    - `breeding/create_breeding_listing.php`
-    - `breeding/update_breeding_listing.php`
-    - `breeding/delete_breeding_listing.php`
-    - `breeding/get_breeding_listing_details.php`
-    - `breeding/get_my_breeding_status.php`
-    - `breeding/find_breeding_matches.php`
-
-### 5. Friends (Remaining)
-- **[MODIFY] [friends.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/internal/api/handlers/friends.go)**:
-    - `friends/send_friend_request.php`
-    - `friends/accept_friend_request.php`
-    - `friends/decline_friend_request.php`
-    - `friends/remove_friend.php`
-    - `friends/get_friend_requests.php`
-    - `friends/search_users.php`
-
-### 6. Messaging (Remaining)
-- **[MODIFY] [messaging.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/internal/api/handlers/messaging.go)**:
-    - `messaging/get_conversations.php`
-    - `messaging/get_messages.php`
-    - `messaging/mark_read.php`
-    - `messaging/start_or_get_conversation.php`
-    - `messaging/get_backup.php`
-
-### 7. Admin Endpoints
-- **[NEW] [admin.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/internal/api/handlers/admin.go)**:
-    - `admin/get_flagged_items.php`
-    - `admin/resolve_report.php`
-    - `admin/take_down_listing.php`
-    - `admin/ban_user.php`
-    - `admin/get_notifications.php`
+### 4. Documentation Update
+#### [MODIFY] [Backend.md](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/Obsidian/ExTrade/Backend.md)
+- Update the API documentation to reflect the new clean paths.
+- Remove references to PHP as a "variant" and mark it as fully decommissioned.
 
 ## Verification Plan
 
 ### Automated Tests
-- Create `_test.go` files for each handler domain (e.g., `profile_test.go`, `admin_test.go`).
-- Run `go test ./...` in the `server/` directory to verify all handlers.
+- Run the full Go test suite (`go test ./...`) to ensure no logic was broken.
+- Since paths are changing, I will need to update any tests that explicitly use the `.php` suffixes (though most use handler functions directly).
 
 ### Manual Verification
-- Perform side-by-side JSON response comparisons between PHP and Go for key endpoints using `curl` or similar tools.
-- Verify end-to-end flows in the Android app (if applicable via manual testing/logs).
+- Deploy the updated Go server.
+- Deploy the updated Android app.
+- Perform a smoke test of all major features:
+    - Authentication (Login/Register)
+    - Fetching Listings/Breeding listings
+    - Messaging flow
+    - Social/Friends interactions
+    - Admin actions
+- Verify static assets (images) still load correctly via the new fallback routing.

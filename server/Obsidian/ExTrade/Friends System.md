@@ -7,7 +7,7 @@ The Friends System manages the user's social graph, utilizing trigram similarity
 ### Activities
 - **[[FriendsActivity.kt]]**:
     - The social hub containing a two-tab interface (Friends / Requests).
-    - Uses a `SearchView` to trigger real-time user discovery via `friends/search_users.php`.
+    - Uses a `SearchView` to trigger real-time user discovery via `friends/search_users`.
     - Manages the state of friend requests (Accept/Decline/Cancel).
 - **[[UserProfileBottomSheet.kt]]** & **[[ProfileBottomSheet.kt]]**:
     - Contextual UI components that allow users to send friend requests from the chat or listings feed without leaving their current screen.
@@ -20,8 +20,8 @@ The Friends System manages the user's social graph, utilizing trigram similarity
     - Contains the basic identity fields: `uuid`, `username`, `profile_pic`, and `is_friend` flag.
 
 ## Flow & API
-1. **Search**: `FriendsActivity` calls `friends/search_users.php` (Legacy PHP - **Deprecated**).
-2. **Request**: Clicking "Add Friend" triggers `friends/send_friend_request.php` (Legacy PHP - **Deprecated**).
+1. **Search**: `FriendsActivity` calls `friends/search_users`.
+2. **Request**: Clicking "Add Friend" triggers `friends/send_friend_request`.
 3. **Observation**: Pending requests are fetched via `friends/get_friend_requests.php` (Legacy PHP - **Deprecated**) and displayed in the "Requests" tab of `FriendsActivity`.
 4. **Acceptance**: Clicking "Accept" triggers `friends/accept_friend_request.php` (Legacy PHP - **Deprecated**), which updates the local list and moves the user to the "Friends" tab.
 

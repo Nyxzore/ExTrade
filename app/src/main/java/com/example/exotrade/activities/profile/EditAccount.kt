@@ -122,7 +122,7 @@ class EditAccount : AppCompatActivity() {
         binding.progressBar.visibility = View.VISIBLE
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("profile/get_profile.php", session.authParams())
+                val response: String = ExoTradeApplication.container.apiService.postForm("profile/get_profile", session.authParams())
                 binding.progressBar.visibility = View.GONE
                 
                 val json = Json.parseToJsonElement(response).jsonObject
@@ -388,7 +388,7 @@ class EditAccount : AppCompatActivity() {
             }
 
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("profile/update_profile.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("profile/update_profile", params)
                 binding.progressBar.visibility = View.GONE
                 
                 val json = Json.parseToJsonElement(response).jsonObject

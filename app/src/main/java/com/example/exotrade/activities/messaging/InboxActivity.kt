@@ -90,7 +90,7 @@ class InboxActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("messaging/get_conversations.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("messaging/get_conversations", params)
                 binding.progressBar.visibility = View.GONE
                 
                 val json = Json.parseToJsonElement(response).jsonObject

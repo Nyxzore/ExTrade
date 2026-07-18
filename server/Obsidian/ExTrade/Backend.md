@@ -1,8 +1,5 @@
 # Backend Architecture
 
-> [!CAUTION]
-> **PHP DEPRECATION NOTICE**: The original PHP backend implementation in `server/php_variant/` is now **deprecated**. All new features and security-critical updates are being built in the Go backend (`server/main.go`). The Android client is being progressively updated to point to the Go implementation.
-
 The backend is built with Go (Golang) and PostgreSQL, serving as a high-performance RESTful API.
 
 ## Core Structure
@@ -10,33 +7,31 @@ The backend is built with Go (Golang) and PostgreSQL, serving as a high-performa
 - **Database Driver**: [pgx](https://github.com/jackc/pgx) for high-performance PostgreSQL interaction with connection pooling.
 - **Authentication**: UUID + Auth Token pairs (session rows in `user_sessions`), verified via middleware. There is no JWT anywhere in this system.
 
-## Implemented Endpoints (Go)
-The Go server (`server/main.go`) is the **authoritative API**. It handles high-traffic and security-critical routes, registering handlers at legacy `.php` paths to maintain compatibility with the Android client while providing superior performance and safety.
+## API Endpoints (Go)
+The Go server (`server/main.go`) is the **authoritative API**.
 
 **Public:**
-- `GET /get_graph_data.php` — `handlers.GetGraphData` (Obsidian visualization).
-- `GET /get_note_content.php` — `handlers.GetNoteContent` (Obsidian note retrieval).
-- `POST /auth/auth.php` — `handlers.AuthHandler` (Login & Registration).
+- `GET /get_graph_data` — `handlers.GetGraphData` (Obsidian visualization).
+- `GET /get_note_content` — `handlers.GetNoteContent` (Obsidian note retrieval).
+- `POST /auth/auth` — `handlers.AuthHandler` (Login & Registration).
+- `GET /get-app` — Static download page.
 
 **Protected** (require `user_id` + `auth_token`, pass `AppVersionCheck`):
-- `POST /listings/get_all_listings.php` — `handlers.GetAllListings` (Hotness-sorted feed).
-- `POST /breeding/get_breeding_listings.php` — `handlers.GetBreedingListings` (Specialized breeding feed).
-- `GET /friends/get_friends.php` — `handlers.GetFriends` (Retrieve active friend list).
-- `POST /messaging/send_message.php` — `handlers.SendMessage` (Send E2EE message).
+- `POST /listings/get_all_listings` — `handlers.GetAllListings` (Hotness-sorted feed).
+- `POST /breeding/get_breeding_listings` — `handlers.GetBreedingListings` (Specialized breeding feed).
+- `GET /friends/get_friends` — `handlers.GetFriends` (Retrieve active friend list).
+- `POST /messaging/send_message` — `handlers.SendMessage` (Send E2EE message).
+- `POST /profile/get_profile` — `handlers.GetProfile`.
+- `POST /profile/update_profile` — `handlers.UpdateProfile`.
+- `POST /listings/create_listing` — `handlers.CreateListing`.
+- `GET /listings/get_all_species` — `handlers.GetAllSpecies`.
+- `POST /admin/get_notifications` — `handlers.GetNotifications`.
 
-## Legacy Endpoints (PHP Variant)
-The `server/php_variant/` directory contains the original PHP implementation. This code is **deprecated** and is being progressively replaced by the Go backend. 
-
-Currently, the PHP variant is only used for endpoints NOT yet ported to Go. These include:
-- **Listings**: `create_listing.php`, `update_listing.php`, `delete_listing.php`, `get_listing_details.php`, `get_all_species.php`.
-- **Breeding**: `create_breeding_listing.php`, `delete_breeding_listing.php`, `find_breeding_matches.php`, `get_breeding_listing_details.php`, `get_my_breeding_status.php`.
-- **Messaging**: `get_conversations.php`, `get_messages.php`, `mark_read.php`, `start_or_get_conversation.php`, `get_backup.php`.
-- **Friends**: `search_users.php`, `send_friend_request.php`, `accept_friend_request.php`, `decline_friend_request.php`, `remove_friend.php`.
-- **Profile**: `get_profile.php`, `update_profile.php`.
-- **Admin**: `ban_user.php`, `get_flagged_items.php`, `get_notifications.php`, `resolve_report.php`, `take_down_listing.php`.
-- **Core**: `get_versions.php`, `report_item.php`.
-
-The Android client still calls these `.php` endpoints. The Go server handles some of these requests by registering identical `.php` routes (see `server/main.go`).
+**Admin** (require `is_admin = true`):
+- `POST /admin/get_flagged_items` — `handlers.GetFlaggedItems`.
+- `POST /admin/resolve_report` — `handlers.ResolveReport`.
+- `POST /admin/take_down_listing` — `handlers.TakeDownListing`.
+- `POST /admin/ban_user` — `handlers.BanUser`.
 
 ## Key Packages
 - `server/internal/db/db.go`: Database connection pooling (`InitDB`).
@@ -66,8 +61,6 @@ Listings are sorted by a combination of:
 
 ## Deep Linking
 The system handles shared listing and breeding links (`exotrade.co.za/listing/{id}`, `exotrade.co.za/breeding/{id}`) via Android App Links (intent-filters + `assetlinks.json`). When the app is installed, Android intercepts the URL directly and opens `ListingDetails`/`BreedingListingDetails`, which parse `getIntent().getData()` as a fallback if not launched from in-app navigation.
-
-**Not yet built**: a server-side landing page for users who don't have the app installed (currently the URL just 404s or shows nothing useful in that case). This is still open work.
 
 ## Test Cases
 See [[Testing]] for run commands and implementation status. Key backend cases:

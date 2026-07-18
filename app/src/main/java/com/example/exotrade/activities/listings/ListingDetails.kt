@@ -89,7 +89,7 @@ class ListingDetails : AppCompatActivity() {
 
             lifecycleScope.launch {
                 try {
-                    val response: String = ExoTradeApplication.container.apiService.postForm("messaging/start_or_get_conversation.php", params)
+                    val response: String = ExoTradeApplication.container.apiService.postForm("messaging/start_or_get_conversation", params)
                     val json = Json.parseToJsonElement(response).jsonObject
                     if ("success" == json["status"]?.jsonPrimitive?.content) {
                         val details = json["listing_details"]?.jsonObject
@@ -156,7 +156,7 @@ class ListingDetails : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.get("listings/get_listing_details.php", params)
+                val response: String = ExoTradeApplication.container.apiService.get("listings/get_listing_details", params)
                 val json = Json.parseToJsonElement(response).jsonObject
                 if ("success" == json["status"]?.jsonPrimitive?.content) {
                     displayDetails(json)
@@ -258,7 +258,7 @@ class ListingDetails : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("listings/update_listing.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("listings/update_listing", params)
                 val json = Json.parseToJsonElement(response).jsonObject
                 if ("success" == json["status"]?.jsonPrimitive?.content) {
                     Toast.makeText(this@ListingDetails, "Marked as SOLD", Toast.LENGTH_SHORT).show()
@@ -296,7 +296,7 @@ class ListingDetails : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("admin/take_down_listing.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("admin/take_down_listing", params)
                 val json = Json.parseToJsonElement(response).jsonObject
                 if ("success" == json["status"]?.jsonPrimitive?.content) {
                     Toast.makeText(this@ListingDetails, "Listing taken down", Toast.LENGTH_SHORT).show()

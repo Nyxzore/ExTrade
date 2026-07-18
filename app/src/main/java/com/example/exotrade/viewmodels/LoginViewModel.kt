@@ -44,7 +44,7 @@ class LoginViewModel(
             _isLoading.value = true
             try {
                 val params = sessionRepository.authParams()
-                val response: String = apiService.postForm("auth/auth.php", params + ("mode" to "verify"))
+                val response: String = apiService.postForm("auth/auth", params + ("mode" to "verify"))
                 val json = Json.parseToJsonElement(response).jsonObject
                 if (json["status"]?.jsonPrimitive?.content == "success") {
                     _sessionVerified.value = true
@@ -72,7 +72,7 @@ class LoginViewModel(
                     "password" to password,
                     "mode" to "login"
                 )
-                val response: String = apiService.postForm("auth/auth.php", params)
+                val response: String = apiService.postForm("auth/auth", params)
                 
                 try {
                     val json = Json.parseToJsonElement(response).jsonObject

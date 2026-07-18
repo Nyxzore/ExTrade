@@ -1,71 +1,30 @@
-# Walkthrough - PHP to Go Porting
+# Walkthrough - Complete PHP to Go Cutover
 
-I have successfully ported all remaining PHP endpoints to the Go backend, achieving behavioral parity with the legacy implementation.
+The migration from PHP to Go is now complete. Every trace of PHP has been removed from the internal API surface, and the codebase has been cleaned up.
 
-## Ported Endpoints
+## Changes Made
 
-The following endpoints have been implemented in Go and registered in `main.go`:
+### 1. Go Server Refactoring
+- **Route Optimization**: Removed the `.php` extension from all Go endpoints. The API now uses clean, modern RESTful paths (e.g., `/auth/auth`, `/listings/get_all_listings`).
+- **Static Content**: Updated the APK download page route from `/get-app.php` to `/get-app`.
 
-### Core Domain
-- `GET /core/get_versions.php` -> `handlers.GetVersions`
-- `POST /core/report_item.php` -> `handlers.ReportItem`
-- `GET /get-app.php` -> Static HTML page `get-app.html`
+### 2. Android Client Sync
+- **Endpoint Update**: Updated all API calls in the Kotlin codebase to use the new extension-less paths.
+- **Smart Preservation**: Intentionally preserved the `profile.php` string in `SocialLinkUtils.kt` to ensure external Facebook profile links continue to be correctly parsed and handled.
 
-### Profile Domain
-- `POST /profile/get_profile.php` -> `handlers.GetProfile`
-- `POST /profile/update_profile.php` -> `handlers.UpdateProfile` (Handles base64 images and security backup rotation)
+### 3. Decommissioning PHP
+- **Cleanup**: Permanently deleted the `server/php_variant/` directory. The Go server is now the sole and authoritative backend.
+- **Documentation**: Fully updated `Backend.md`, `Breeding System.md`, `Friends System.md`, and `Dev Setup.md` to reflect the final architecture and remove all "deprecated PHP" warnings.
 
-### Listings Domain
-- `POST /listings/create_listing.php` -> `handlers.CreateListing`
-- `POST /listings/update_listing.php` -> `handlers.UpdateListing`
-- `POST /listings/delete_listing.php` -> `handlers.DeleteListing`
-- `GET/POST /listings/get_listing_details.php` -> `handlers.GetListingDetails`
-- `GET /listings/get_all_species.php` -> `handlers.GetAllSpecies` (New: Provides detailed species info from joined `taxa` and `spiders` tables)
+## Verification Results
 
-### Breeding Domain
-- `POST /breeding/create_breeding_listing.php` -> `handlers.CreateBreedingListing`
-- `POST /breeding/update_breeding_listing.php` -> `handlers.UpdateBreedingListing`
-- `POST /breeding/delete_breeding_listing.php` -> `handlers.DeleteBreedingListing`
-- `GET/POST /breeding/get_breeding_listing_details.php` -> `handlers.GetBreedingListingDetails`
-- `POST /breeding/get_my_breeding_status.php` -> `handlers.GetMyBreedingStatus`
-- `POST /breeding/find_breeding_matches.php` -> `handlers.FindBreedingMatches`
+### Build Status
+- **Go Server**: Verified successful build (`go build`).
+- **Android App**: Verified successful build (`:app:assembleDebug`).
 
-### Friends Domain
-- `POST /friends/send_friend_request.php` -> `handlers.SendFriendRequest`
-- `POST /friends/accept_friend_request.php` -> `handlers.AcceptFriendRequest`
-- `POST /friends/decline_friend_request.php` -> `handlers.DeclineFriendRequest`
-- `POST /friends/remove_friend.php` -> `handlers.RemoveFriend`
-- `POST /friends/get_friend_requests.php` -> `handlers.GetFriendRequests`
-- `POST /friends/search_users.php` -> `handlers.SearchUsers`
+### Connectivity
+- Internal API routes are now standardized and synchronized between client and server.
+- Fallback routing for static assets (listings/profile pics) remains functional without wildcard conflicts.
 
-### Messaging Domain
-- `GET/POST /messaging/get_conversations.php` -> `handlers.GetConversations`
-- `GET/POST /messaging/get_messages.php` -> `handlers.GetMessages`
-- `POST /messaging/mark_read.php` -> `handlers.MarkRead`
-- `POST /messaging/start_or_get_conversation.php` -> `handlers.StartOrGetConversation`
-- `POST /messaging/get_backup.php` -> `handlers.GetBackup`
-
-### Admin Domain
-- `POST /admin/get_flagged_items.php` -> `handlers.GetFlaggedItems` (Admin Required)
-- `POST /admin/resolve_report.php` -> `handlers.ResolveReport` (Admin Required)
-- `POST /admin/take_down_listing.php` -> `handlers.TakeDownListing` (Admin Required)
-- `POST /admin/ban_user.php` -> `handlers.BanUser` (Admin Required)
-- `GET/POST /admin/get_notifications.php` -> `handlers.GetNotifications` (User facing)
-
-## Shared Logic & Helpers
-- **[social.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/pkg/utils/social.go)**: Ported WhatsApp, Facebook, and Instagram normalization logic.
-- **[helpers.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/pkg/utils/helpers.go)**: Added `IsValidEmail` and `FormatAge` helpers.
-- **[db.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/internal/db/db.go)**: Expanded `PgxPool` interface to include `Begin` for transactions.
-
-## Routing & Static Assets
-
-- **Conflict Resolution**: Fixed a Gin routing panic caused by overlapping wildcard static routes and specific `.php` endpoints. I replaced the broad `r.Static` calls with a `NoRoute` fallback that serves static assets from `./listings`, `./profile_pics`, and `./downloads` only if they exist on disk and aren't caught by API handlers.
-- **Support for Both Methods**: Standardized handlers like `GetListingDetails` and `GetMessages` to support both `GET` and `POST` as used by different parts of the Android client.
-
-### Automated Tests
-- Ran `go test ./...` in the `server/` directory.
-- All existing tests passed, and the new code compiles correctly.
-
-### Security Parity
-- Verified all session checks, ownership verifications, and admin-only protections match the PHP implementation.
-- All SQL queries use bound parameters to prevent injection.
+> [!CAUTION]
+> **Restart Required**: Ensure you have restarted the Go server (`go run main.go`) to deactivate the old PHP-style routes and enable the clean API paths.

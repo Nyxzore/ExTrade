@@ -228,7 +228,7 @@ class CreateListing : AppCompatActivity() {
             }
 
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("listings/create_listing.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("listings/create_listing", params)
                 binding.btnCreateListing.isEnabled = true
                 binding.progressBar.visibility = View.GONE
                 

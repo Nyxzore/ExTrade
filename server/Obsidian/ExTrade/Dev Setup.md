@@ -6,7 +6,8 @@
 3. Start the Cloudflare Tunnel: `cloudflared tunnel run exotrade`
 4. Confirm the Go bind address/port matches the tunnel's ingress config.
 
-The Android app calls legacy `.php` route paths. The Go server registers handlers at these paths for implemented features. Unimplemented features still fallback to the **deprecated** PHP legacy backend in `server/php_variant/`.
+The Android app calls clean Go API paths.
+
 
 ## Shared KMP Module
 The `:shared` module can be tested using the following Gradle tasks:

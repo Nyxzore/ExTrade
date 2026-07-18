@@ -48,7 +48,7 @@ class MyBreedingListings : AppCompatActivity() {
         val params = session.authParams().toMutableMap()
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("breeding/get_my_breeding_status.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("breeding/get_my_breeding_status", params)
                 val json = Json.parseToJsonElement(response).jsonObject
                 if (json["status"]?.jsonPrimitive?.content == "success") {
                     val arr = json["listings"]?.jsonArray

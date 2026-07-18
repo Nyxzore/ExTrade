@@ -201,7 +201,7 @@ class CreateBreedingListing : AppCompatActivity() {
             binding.progressBar.visibility = View.VISIBLE
 
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("breeding/create_breeding_listing.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("breeding/create_breeding_listing", params)
                 binding.btnCreateBreedingListing.isEnabled = true
                 binding.progressBar.visibility = View.GONE
                 

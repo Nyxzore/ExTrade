@@ -111,7 +111,7 @@ class FriendsActivity : AppCompatActivity() {
         binding.progressBar.visibility = View.VISIBLE
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("friends/get_friends.php", session.authParams())
+                val response: String = ExoTradeApplication.container.apiService.postForm("friends/get_friends", session.authParams())
                 binding.progressBar.visibility = View.GONE
                 val json = Json.parseToJsonElement(response).jsonObject
                 if ("success" == json["status"]?.jsonPrimitive?.content) {
@@ -133,7 +133,7 @@ class FriendsActivity : AppCompatActivity() {
         binding.progressBar.visibility = View.VISIBLE
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("friends/get_friend_requests.php", session.authParams())
+                val response: String = ExoTradeApplication.container.apiService.postForm("friends/get_friend_requests", session.authParams())
                 binding.progressBar.visibility = View.GONE
                 val json = Json.parseToJsonElement(response).jsonObject
                 if ("success" == json["status"]?.jsonPrimitive?.content) {
@@ -158,7 +158,7 @@ class FriendsActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("friends/search_users.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("friends/search_users", params)
                 binding.progressBar.visibility = View.GONE
                 val json = Json.parseToJsonElement(response).jsonObject
                 if ("success" == json["status"]?.jsonPrimitive?.content) {
@@ -209,15 +209,15 @@ class FriendsActivity : AppCompatActivity() {
         val message: String
 
         if (binding.toggleGroup.checkedButtonId == R.id.btnFriendsTab) {
-            endpoint = "friends/remove_friend.php"
+            endpoint = "friends/remove_friend"
             params["friend_id"] = user.id ?: ""
             message = "Friend removed"
         } else {
             if (accept) {
-                endpoint = "friends/accept_friend_request.php"
+                endpoint = "friends/accept_friend_request"
                 message = "Friend request accepted"
             } else {
-                endpoint = "friends/decline_friend_request.php"
+                endpoint = "friends/decline_friend_request"
                 message = "Friend request declined"
             }
             params["requester_id"] = user.id ?: ""

@@ -120,7 +120,7 @@ class AdminActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("friends/search_users.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("friends/search_users", params)
                 binding.progressBar.visibility = View.GONE
                 val json = Json.parseToJsonElement(response).jsonObject
                 if (json["status"]?.jsonPrimitive?.content == "success") {
@@ -150,7 +150,7 @@ class AdminActivity : AppCompatActivity() {
         binding.lblEmpty.visibility = View.GONE
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("admin/get_flagged_items.php", session.authParams())
+                val response: String = ExoTradeApplication.container.apiService.postForm("admin/get_flagged_items", session.authParams())
                 binding.progressBar.visibility = View.GONE
                 val json = Json.parseToJsonElement(response).jsonObject
                 if (json["status"]?.jsonPrimitive?.content == "success") {
@@ -189,7 +189,7 @@ class AdminActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("admin/resolve_report.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("admin/resolve_report", params)
                 val json = Json.parseToJsonElement(response).jsonObject
                 Toast.makeText(this@AdminActivity, json["message"]?.jsonPrimitive?.content, Toast.LENGTH_SHORT).show()
                 if (json["status"]?.jsonPrimitive?.content == "success") fetchReports()
@@ -212,7 +212,7 @@ class AdminActivity : AppCompatActivity() {
         params["reason"] = "Violation of terms"
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("admin/ban_user.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("admin/ban_user", params)
                 val json = Json.parseToJsonElement(response).jsonObject
                 if (json["status"]?.jsonPrimitive?.content == "success") {
                     Toast.makeText(this@AdminActivity, "User banned", Toast.LENGTH_SHORT).show()

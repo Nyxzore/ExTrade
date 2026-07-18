@@ -144,7 +144,7 @@ class EditListing : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("listings/get_listing_details.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("listings/get_listing_details", params)
                 binding.progressBar.visibility = View.GONE
                 
                 val json = Json.parseToJsonElement(response).jsonObject
@@ -278,7 +278,7 @@ class EditListing : AppCompatActivity() {
             }
 
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("listings/update_listing.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("listings/update_listing", params)
                 binding.btnCreateListing.isEnabled = true
                 binding.progressBar.visibility = View.GONE
                 

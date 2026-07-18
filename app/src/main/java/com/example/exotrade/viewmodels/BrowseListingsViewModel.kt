@@ -58,7 +58,7 @@ class BrowseListingsViewModel(
         }
         
         try {
-            val response: String = apiService.postForm("listings/get_all_listings.php", params)
+            val response: String = apiService.postForm("listings/get_all_listings", params)
             val root = Json.parseToJsonElement(response).jsonObject
             if (root["status"]?.toString()?.contains("success") == true) {
                 val data = root["listings"]?.jsonArray ?: return

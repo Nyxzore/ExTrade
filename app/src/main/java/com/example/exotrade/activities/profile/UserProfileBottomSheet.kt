@@ -72,7 +72,7 @@ class UserProfileBottomSheet : BottomSheetDialogFragment() {
 
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("profile/get_profile.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("profile/get_profile", params)
                 if (!isAdded) return@launch
                 
                 val json = Json.parseToJsonElement(response).jsonObject

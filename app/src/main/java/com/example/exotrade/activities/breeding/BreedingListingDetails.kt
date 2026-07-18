@@ -101,7 +101,7 @@ class BreedingListingDetails : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.get("breeding/get_breeding_listing_details.php", params)
+                val response: String = ExoTradeApplication.container.apiService.get("breeding/get_breeding_listing_details", params)
                 val json = Json.parseToJsonElement(response).jsonObject
                 if (json["status"]?.jsonPrimitive?.content == "success") {
                     binding.lblCommonName.text = json["common_name"]?.jsonPrimitive?.content
@@ -173,7 +173,7 @@ class BreedingListingDetails : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("messaging/start_or_get_conversation.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("messaging/start_or_get_conversation", params)
                 val json = Json.parseToJsonElement(response).jsonObject
                 if (json["status"]?.jsonPrimitive?.content == "success") {
                     val details = json["listing_details"]?.jsonObject
@@ -225,7 +225,7 @@ class BreedingListingDetails : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("admin/take_down_listing.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("admin/take_down_listing", params)
                 val json = Json.parseToJsonElement(response).jsonObject
                 if (json["status"]?.jsonPrimitive?.content == "success") {
                     Toast.makeText(this@BreedingListingDetails, "Listing taken down", Toast.LENGTH_SHORT).show()

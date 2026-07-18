@@ -120,7 +120,7 @@ class Profile : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("profile/get_profile.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("profile/get_profile", params)
                 val json = Json.parseToJsonElement(response).jsonObject
                 if ("success" == json["status"]?.jsonPrimitive?.content) {
                     val username = json["username"]?.jsonPrimitive?.content ?: ""
@@ -277,7 +277,7 @@ class Profile : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("friends/send_friend_request.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("friends/send_friend_request", params)
                 val json = Json.parseToJsonElement(response).jsonObject
                 if ("success" == json["status"]?.jsonPrimitive?.content) {
                     Toast.makeText(this@Profile, "Friend request sent!", Toast.LENGTH_SHORT).show()
@@ -300,7 +300,7 @@ class Profile : AppCompatActivity() {
 
                 lifecycleScope.launch {
                     try {
-                        val response: String = ExoTradeApplication.container.apiService.postForm("listings/delete_listing.php", params)
+                        val response: String = ExoTradeApplication.container.apiService.postForm("listings/delete_listing", params)
                         val json = Json.parseToJsonElement(response).jsonObject
                         if ("success" == json["status"]?.jsonPrimitive?.content) {
                             Toast.makeText(this@Profile, "Deleted", Toast.LENGTH_SHORT).show()

@@ -197,7 +197,7 @@ class BrowseListings : AppCompatActivity() {
                 params["listing_id"] = listingId
                 lifecycleScope.launch {
                     try {
-                        val response: String = ExoTradeApplication.container.apiService.postForm("listings/delete_listing.php", params)
+                        val response: String = ExoTradeApplication.container.apiService.postForm("listings/delete_listing", params)
                         if (response.contains("\"status\":\"success\"")) {
                             Toast.makeText(this@BrowseListings, "Deleted", Toast.LENGTH_SHORT).show()
                             viewModel.refresh()

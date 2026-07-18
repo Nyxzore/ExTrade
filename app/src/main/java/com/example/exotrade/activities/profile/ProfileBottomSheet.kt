@@ -98,7 +98,7 @@ class ProfileBottomSheet : BottomSheetDialogFragment() {
 
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("profile/get_profile.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("profile/get_profile", params)
                 if (!isAdded) return@launch
                 
                 val json = Json.parseToJsonElement(response).jsonObject
@@ -194,7 +194,7 @@ class ProfileBottomSheet : BottomSheetDialogFragment() {
 
         lifecycleScope.launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("friends/send_friend_request.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("friends/send_friend_request", params)
                 if (!isAdded) return@launch
                 val json = Json.parseToJsonElement(response).jsonObject
                 if ("success" == json["status"]?.jsonPrimitive?.content) {

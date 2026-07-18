@@ -105,7 +105,7 @@ object ReportDialog {
 
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("core/report_item.php", params)
+                val response: String = ExoTradeApplication.container.apiService.postForm("core/report_item", params)
                 val json = Json.parseToJsonElement(response).jsonObject
                 Toast.makeText(context, json["message"]?.jsonPrimitive?.content, Toast.LENGTH_LONG).show()
                 if ("success" == json["status"]?.jsonPrimitive?.content) {
