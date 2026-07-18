@@ -4,16 +4,18 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import com.example.exotrade.activities.BaseActivity
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.exotrade.ExoTradeApplication
 import com.example.exotrade.R
+import com.example.exotrade.activities.MainHostActivity
 import com.example.exotrade.activities.breeding.CreateBreedingListing
-import com.example.exotrade.activities.profile.Profile
 import com.example.exotrade.databinding.ListingActivityCreateBinding
 import com.example.exotrade.data.SessionRepository
 import com.example.exotrade.data.SpeciesRepository
@@ -27,13 +29,15 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 /**
- * Activity for creating a new animal listing.
+ * Fragment for creating a new animal listing.
  * Provides autocomplete for species names using [SpeciesRepository]
  * and handles image selection and compression before uploading to the server.
  */
-class CreateListing : BaseActivity() {
+class CreateListingFragment : Fragment() {
 
-    private lateinit var binding: ListingActivityCreateBinding
+    private var _binding: ListingActivityCreateBinding? = null
+    private val binding get() = _binding!!
+    
     private lateinit var session: SessionRepository
     private lateinit var speciesRepository: SpeciesRepository
     private var selectedImageUri: Uri? = null
@@ -51,10 +55,17 @@ class CreateListing : BaseActivity() {
         }
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ListingActivityCreateBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = ListingActivityCreateBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         session = ExoTradeApplication.container.sessionRepository
         speciesRepository = ExoTradeApplication.container.speciesRepository
@@ -74,8 +85,7 @@ class CreateListing : BaseActivity() {
                     currentListingType = "sale"
                     tilPrice.hint = getString(R.string.asking_price)
                 } else if (checkedId == R.id.btnTypeBreeding) {
-                    startActivity(Intent(this, CreateBreedingListing::class.java))
-                    finish()
+                    startActivity(Intent(requireContext(), CreateBreedingListing::class.java))
                 }
             }
         }
@@ -91,8 +101,6 @@ class CreateListing : BaseActivity() {
             binding.etAgeUnit.setText(savedInstanceState.getString("age_unit_value", getString(R.string.months)), false)
         }
 
-        NavigationHelper.setup(this, binding.bottomNavigation, R.id.nav_add)
-
         binding.toolbar.setOnMenuItemClickListener { item ->
             if (item.itemId == R.id.action_info) {
                 showInfoDialog()
@@ -104,7 +112,7 @@ class CreateListing : BaseActivity() {
     }
 
     private fun showInfoDialog() {
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
             .setTitle("Create Listing Help")
             .setMessage("Fill in the details of the animal you wish to sell. \n\n" +
                     "• Scientific Name: Required for categorization.\n" +
@@ -117,24 +125,21 @@ class CreateListing : BaseActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putString("sex_value", binding.etSex.text.toString())
-        outState.putString("age_unit_value", binding.etAgeUnit.text.toString())
-    }
-
-    override fun onResume() {
-        super.onResume()
-        Helpers.updateUnreadBadge(binding.bottomNavigation)
+        _binding?.let {
+            outState.putString("sex_value", it.etSex.text.toString())
+            outState.putString("age_unit_value", it.etAgeUnit.text.toString())
+        }
     }
 
     private fun loadSpeciesData() {
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             val scientificList = speciesRepository.getNames(isScientific = true)
             val commonList = speciesRepository.getNames(isScientific = false)
 
             if (scientificList.isEmpty()) {
                 if (isSyncing) return@launch
                 if (speciesSyncAttempts >= 2) {
-                    Toast.makeText(this@CreateListing, "Couldn't load species list. Pull down to retry.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(requireContext(), "Couldn't load species list. Pull down to retry.", Toast.LENGTH_LONG).show()
                     return@launch
                 }
                 speciesSyncAttempts++
@@ -145,17 +150,17 @@ class CreateListing : BaseActivity() {
                 return@launch
             }
 
-            val sAdapter = ArrayAdapter(this@CreateListing, android.R.layout.simple_dropdown_item_1line, scientificList)
+            val sAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, scientificList)
             binding.etScientificName.setAdapter(sAdapter)
             binding.etScientificName.threshold = 1
 
-            val cAdapter = ArrayAdapter(this@CreateListing, android.R.layout.simple_dropdown_item_1line, commonList)
+            val cAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, commonList)
             binding.etCommonName.setAdapter(cAdapter)
             binding.etCommonName.threshold = 1
 
             binding.etCommonName.setOnItemClickListener { parent, _, position, _ ->
                 val selectedCommon = parent.getItemAtPosition(position) as String
-                lifecycleScope.launch {
+                viewLifecycleOwner.lifecycleScope.launch {
                     val scientific = speciesRepository.getScientificName(selectedCommon)
                     if (!scientific.isNullOrEmpty()) {
                         binding.etScientificName.setText(scientific, false)
@@ -165,7 +170,7 @@ class CreateListing : BaseActivity() {
 
             binding.etScientificName.setOnItemClickListener { parent, _, position, _ ->
                 val selectedScientific = parent.getItemAtPosition(position) as String
-                lifecycleScope.launch {
+                viewLifecycleOwner.lifecycleScope.launch {
                     val common = speciesRepository.getCommonName(selectedScientific)
                     if (!common.isNullOrEmpty()) {
                         binding.etCommonName.setText(common, false)
@@ -179,7 +184,7 @@ class CreateListing : BaseActivity() {
 
     private suspend fun encodeImage(uri: Uri): String? = withContext(Dispatchers.IO) {
         try {
-            contentResolver.openInputStream(uri)?.use { inputStream ->
+            requireContext().contentResolver.openInputStream(uri)?.use { inputStream ->
                 val bitmap = BitmapFactory.decodeStream(inputStream)
                 ImageUtils.compressAndEncode(bitmap)
             }
@@ -198,18 +203,18 @@ class CreateListing : BaseActivity() {
         val unit = binding.etAgeUnit.text.toString().trim()
 
         if (scientificName.isEmpty()) {
-            Toast.makeText(this, "Please fill in scientific name", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Please fill in scientific name", Toast.LENGTH_SHORT).show()
             return
         }
 
         if (currentListingType == "sale" && price.isEmpty()) {
-            Toast.makeText(this, "Please fill in price", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Please fill in price", Toast.LENGTH_SHORT).show()
             return
         }
 
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             if (!speciesRepository.isValidSpecies(scientificName)) {
-                Toast.makeText(this@CreateListing, "Please select a valid species from the list", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Please select a valid species from the list", Toast.LENGTH_SHORT).show()
                 return@launch
             }
 
@@ -253,20 +258,21 @@ class CreateListing : BaseActivity() {
                 
                 val json = Json.parseToJsonElement(response).jsonObject
                 if ("success" == json["status"]?.jsonPrimitive?.content) {
-                    Toast.makeText(this@CreateListing, "Listing posted successfully!", Toast.LENGTH_SHORT).show()
-                    val intent = Intent(this@CreateListing, Profile::class.java).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    startActivity(intent)
-                    finish()
+                    Toast.makeText(requireContext(), "Listing posted successfully!", Toast.LENGTH_SHORT).show()
+                    (requireActivity() as? MainHostActivity)?.switchTab(R.id.nav_profile)
                 } else {
-                    Toast.makeText(this@CreateListing, "Error: " + json["message"]?.jsonPrimitive?.content, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Error: " + json["message"]?.jsonPrimitive?.content, Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 binding.btnCreateListing.isEnabled = true
                 binding.progressBar.visibility = View.GONE
-                Toast.makeText(this@CreateListing, "Failed to connect to server", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Failed to connect to server", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

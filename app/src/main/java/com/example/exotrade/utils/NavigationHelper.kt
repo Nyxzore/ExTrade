@@ -4,11 +4,8 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import com.example.exotrade.ExoTradeApplication
 import com.example.exotrade.R
+import com.example.exotrade.activities.MainHostActivity
 import com.example.exotrade.activities.admin.AdminActivity
-import com.example.exotrade.activities.listings.BrowseListings
-import com.example.exotrade.activities.listings.CreateListing
-import com.example.exotrade.activities.messaging.InboxActivity
-import com.example.exotrade.activities.profile.Profile
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,6 +14,7 @@ import kotlinx.coroutines.launch
 /**
  * Utility class to set up {@link BottomNavigationView} and handle tab transitions.
  * Centralizes the logic for switching between main activities and applying snappy transitions.
+ * Note: Main tabs are now fragments inside {@link MainHostActivity}.
  */
 object NavigationHelper {
 
@@ -40,11 +38,28 @@ object NavigationHelper {
             if (now - lastNavTime < 400) return@setOnItemSelectedListener false
             
             val itemId = item.itemId
+            
+            // For MainHostActivity tabs, we redirect to the host activity
+            val isTab = itemId == R.id.nav_home || itemId == R.id.nav_messages || 
+                         itemId == R.id.nav_add || itemId == R.id.nav_profile
+
+            if (isTab) {
+                if (activity is MainHostActivity) {
+                    // This case should be handled by the Activity itself, but we keep it safe
+                    return@setOnItemSelectedListener true
+                }
+                
+                lastNavTime = now
+                val intent = Intent(activity, MainHostActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                    putExtra("initial_tab", itemId)
+                }
+                activity.startActivity(intent)
+                activity.overridePendingTransition(0, 0)
+                return@setOnItemSelectedListener true
+            }
+
             val target: Class<*> = when (itemId) {
-                R.id.nav_home -> BrowseListings::class.java
-                R.id.nav_messages -> InboxActivity::class.java
-                R.id.nav_add -> CreateListing::class.java
-                R.id.nav_profile -> Profile::class.java
                 R.id.nav_admin -> AdminActivity::class.java
                 else -> return@setOnItemSelectedListener false
             }

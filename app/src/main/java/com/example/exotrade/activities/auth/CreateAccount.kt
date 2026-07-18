@@ -10,7 +10,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.exotrade.ExoTradeApplication
-import com.example.exotrade.activities.listings.BrowseListings
+import com.example.exotrade.activities.MainHostActivity
 import com.example.exotrade.databinding.AuthActivityRegisterBinding
 import com.example.exotrade.utils.Helpers
 import com.example.exotrade.utils.ImageUtils
@@ -55,7 +55,7 @@ class CreateAccount : AppCompatActivity() {
             lifecycleScope.launch {
                 ExoTradeApplication.container.speciesRepository.syncFromServer(false)
 
-                val intent = Intent(this@CreateAccount, BrowseListings::class.java)
+                val intent = Intent(this@CreateAccount, MainHostActivity::class.java)
                 startActivity(intent)
                 finish()
             }
@@ -168,7 +168,7 @@ class CreateAccount : AppCompatActivity() {
                     ExoTradeApplication.container.speciesRepository.syncFromServer(false)
 
                     Toast.makeText(this@CreateAccount, "Account created successfully", Toast.LENGTH_SHORT).show()
-                    val intent = Intent(this@CreateAccount, BrowseListings::class.java)
+                    val intent = Intent(this@CreateAccount, MainHostActivity::class.java)
                     startActivity(intent)
                     finish()
                 } else {

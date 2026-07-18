@@ -9,7 +9,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.exotrade.activities.BaseActivity
-import com.example.exotrade.activities.listings.BrowseListings
+import com.example.exotrade.activities.MainHostActivity
 import com.example.exotrade.databinding.AuthActivityLoginBinding
 import com.example.exotrade.viewmodels.LoginViewModel
 import com.example.exotrade.viewmodels.ViewModelFactory
@@ -92,7 +92,7 @@ class Login : BaseActivity() {
     }
 
     private fun goToMainPage() {
-        val intent = Intent(this, BrowseListings::class.java)
+        val intent = Intent(this, MainHostActivity::class.java)
         startActivity(intent)
         finish()
     }

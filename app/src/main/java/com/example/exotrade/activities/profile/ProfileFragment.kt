@@ -2,17 +2,19 @@ package com.example.exotrade.activities.profile
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.exotrade.Adapters.ListingAdapter
 import com.example.exotrade.ExoTradeApplication
 import com.example.exotrade.R
-import com.example.exotrade.activities.BaseActivity
 import com.example.exotrade.activities.listings.EditListing
 import com.example.exotrade.activities.listings.ListingDetails
 import com.example.exotrade.databinding.ProfileActivityMainBinding
@@ -26,48 +28,48 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.int
 
 /**
- * Activity for displaying another user's profile, including their bio, social links, and listings.
- * This activity is used when viewing profiles other than the current user's.
+ * Fragment for displaying the current user's own profile.
  */
-class Profile : BaseActivity() {
-    private lateinit var binding: ProfileActivityMainBinding
+class ProfileFragment : Fragment() {
+    private var _binding: ProfileActivityMainBinding? = null
+    private val binding get() = _binding!!
+    
     private lateinit var session: SessionRepository
-    private var viewUserId: String? = null
     private val allFetchedListings = mutableListOf<Listing>()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ProfileActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = ProfileActivityMainBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         session = ExoTradeApplication.container.sessionRepository
-        viewUserId = intent.getStringExtra("user_id")
-
-        if (viewUserId == null || viewUserId == session.getUserUUID()) {
-            // This activity should only be used for other users.
-            // If it's the current user, or ID is missing, we shouldn't be here.
-            finish()
-            return
-        }
 
         setupUI()
         setupListeners()
-        setupNavigation()
     }
 
     private fun setupUI() {
-        binding.rvMyListings.layoutManager = LinearLayoutManager(this)
+        binding.rvMyListings.layoutManager = LinearLayoutManager(requireContext())
 
-        binding.btnEditProfile.visibility = View.GONE
-        binding.btnSettings.visibility = View.GONE
-        binding.btnAddFriend.visibility = View.VISIBLE
-        binding.btnFriends.visibility = View.GONE
-        binding.btnReportUser.visibility = View.VISIBLE
-
-        binding.lblMyListings.text = "Listings"
+        // Hardcode for self-view
+        binding.btnEditProfile.visibility = View.VISIBLE
+        binding.btnSettings.visibility = View.VISIBLE
+        binding.btnAddFriend.visibility = View.GONE
+        binding.btnFriends.visibility = View.VISIBLE
+        binding.btnReportUser.visibility = View.GONE
+        
+        binding.lblMyListings.text = "My Listings"
     }
 
     private fun setupListeners() {
@@ -75,14 +77,17 @@ class Profile : BaseActivity() {
             filterAndDisplayListings()
         }
 
-        binding.btnAddFriend.setOnClickListener { addFriend() }
-        binding.btnReportUser.setOnClickListener {
-            com.example.exotrade.utils.ReportDialog.show(this, "user", viewUserId ?: "", null)
+        binding.btnFriends.setOnClickListener {
+            startActivity(Intent(requireContext(), FriendsActivity::class.java))
         }
-    }
 
-    private fun setupNavigation() {
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        binding.btnSettings.setOnClickListener {
+            startActivity(Intent(requireContext(), SettingsActivity::class.java))
+        }
+
+        binding.btnEditProfile.setOnClickListener {
+            startActivity(Intent(requireContext(), EditAccount::class.java))
+        }
     }
 
     override fun onResume() {
@@ -91,11 +96,11 @@ class Profile : BaseActivity() {
     }
 
     private fun fetchProfileData() {
-        val targetId = viewUserId ?: return
+        val targetId = session.getUserUUID() ?: return
         val params = session.authParams().toMutableMap()
         params["target_user_id"] = targetId
 
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val response: String = ExoTradeApplication.container.apiService.postForm("profile/get_profile", params)
                 
@@ -112,12 +117,19 @@ class Profile : BaseActivity() {
                         tierElement.jsonPrimitive.int
                     } else 0
 
+                    session.updateUserInfo(
+                        username = username,
+                        profilePic = picPath ?: "",
+                        tier = tier,
+                        isAdmin = json["is_admin"]?.jsonPrimitive?.boolean ?: false
+                    )
+
                     val whatsapp = json["whatsapp"]?.jsonPrimitive?.content
                     val facebook = json["facebook"]?.jsonPrimitive?.content
                     val instagram = json["instagram"]?.jsonPrimitive?.content
 
                     SocialLinkUtils.bindProfileIcons(
-                        this@Profile,
+                        requireActivity(),
                         binding.layoutSocialLinks,
                         binding.imgSocialWhatsApp,
                         binding.imgSocialFacebook,
@@ -130,8 +142,8 @@ class Profile : BaseActivity() {
                     val imgProfile = binding.imgProfilePicture
                     if (imgProfile is ShapeableImageView) {
                         if (tier >= 1) {
-                            imgProfile.strokeWidth = Helpers.dpToPx(this@Profile, 1).toFloat()
-                            imgProfile.strokeColor = ContextCompat.getColorStateList(this@Profile, R.color.tier_1_orange)
+                            imgProfile.strokeWidth = Helpers.dpToPx(requireContext(), 1).toFloat()
+                            imgProfile.strokeColor = ContextCompat.getColorStateList(requireContext(), R.color.tier_1_orange)
                         } else {
                             imgProfile.strokeWidth = 0f
                         }
@@ -149,7 +161,7 @@ class Profile : BaseActivity() {
                                 price = l["price"]?.jsonPrimitive?.content,
                                 description = l["description"]?.jsonPrimitive?.content,
                                 imageUrl = l["image_url"]?.jsonPrimitive?.content,
-                                sellerId = viewUserId,
+                                sellerId = targetId,
                                 listingType = l["kind"]?.jsonPrimitive?.content,
                                 sex = l["sex"]?.jsonPrimitive?.content,
                                 status = l["status"]?.jsonPrimitive?.content,
@@ -160,10 +172,10 @@ class Profile : BaseActivity() {
                     filterAndDisplayListings()
                 } else {
                     val msg = json["message"]?.jsonPrimitive?.content ?: "Unknown error"
-                    Toast.makeText(this@Profile, "Error: $msg", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Error: $msg", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(this@Profile, "Failed to load profile data", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Failed to load profile data", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -175,42 +187,85 @@ class Profile : BaseActivity() {
         val adapter = ListingAdapter(filtered.toMutableList(), object : ListingAdapter.OnListingListener {
             override fun onListingClick(listing: Listing) {
                 val intent = if ("breeding" == listing.listingType) {
-                    Intent(this@Profile, com.example.exotrade.activities.breeding.BreedingListingDetails::class.java)
+                    Intent(requireContext(), com.example.exotrade.activities.breeding.BreedingListingDetails::class.java)
                 } else {
-                    Intent(this@Profile, ListingDetails::class.java)
+                    Intent(requireContext(), ListingDetails::class.java)
                 }
                 intent.putExtra("listing_id", listing.id)
                 startActivity(intent)
             }
 
             override fun onListingLongClick(listing: Listing, view: View, x: Float, y: Float) {
-                // Other users' profiles don't have listing management menus
+                showListingMenu(listing, view)
             }
         })
         binding.rvMyListings.adapter = adapter
     }
 
-    override fun onSupportNavigateUp(): Boolean {
-        finish()
-        return true
+    private fun showListingMenu(listing: Listing, view: View) {
+        val popup = PopupMenu(requireContext(), view)
+        
+        popup.menu.add("Edit")
+        popup.menu.add("Delete")
+        popup.menu.add("Share")
+
+        popup.setOnMenuItemClickListener { item ->
+            when (item.title?.toString()) {
+                "Delete" -> listing.id?.let { deleteListing(it) }
+                "Edit" -> {
+                    val intent = Intent(requireContext(), EditListing::class.java)
+                    intent.putExtra("listing_id", listing.id)
+                    startActivity(intent)
+                }
+                "Share" -> com.example.exotrade.utils.ShareUtils.shareListingAsImage(
+                    requireActivity(),
+                    listing.id ?: "",
+                    listing.commonName,
+                    listing.scientificName,
+                    listing.price,
+                    listing.description,
+                    listing.imageUrl,
+                    "sold" == listing.status,
+                    listing.listingType,
+                    listing.whatsapp,
+                    listing.facebook,
+                    listing.instagram
+                )
+            }
+            true
+        }
+        popup.show()
     }
 
-    private fun addFriend() {
-        val params = session.authParams().toMutableMap()
-        params["target_user_id"] = viewUserId ?: ""
+    private fun deleteListing(listingId: String) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Delete Listing")
+            .setMessage("Are you sure you want to delete this listing?")
+            .setPositiveButton("Yes") { _, _ ->
+                val params = session.authParams().toMutableMap()
+                params["listing_id"] = listingId
 
-        lifecycleScope.launch {
-            try {
-                val response: String = ExoTradeApplication.container.apiService.postForm("friends/send_friend_request", params)
-                val json = Json.parseToJsonElement(response).jsonObject
-                if ("success" == json["status"]?.jsonPrimitive?.content) {
-                    Toast.makeText(this@Profile, "Friend request sent!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this@Profile, json["message"]?.jsonPrimitive?.content, Toast.LENGTH_SHORT).show()
+                viewLifecycleOwner.lifecycleScope.launch {
+                    try {
+                        val response: String = ExoTradeApplication.container.apiService.postForm("listings/delete_listing", params)
+                        val json = Json.parseToJsonElement(response).jsonObject
+                        if ("success" == json["status"]?.jsonPrimitive?.content) {
+                            Toast.makeText(requireContext(), "Deleted", Toast.LENGTH_SHORT).show()
+                            fetchProfileData()
+                        } else {
+                            Toast.makeText(requireContext(), json["message"]?.jsonPrimitive?.content, Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(requireContext(), "Error deleting", Toast.LENGTH_SHORT).show()
+                    }
                 }
-            } catch (e: Exception) {
-                Toast.makeText(this@Profile, "Failed to send friend request", Toast.LENGTH_SHORT).show()
             }
-        }
+            .setNegativeButton("No", null)
+            .show()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

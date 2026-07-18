@@ -3,19 +3,18 @@ package com.example.exotrade.activities.messaging
 import android.content.Intent
 import android.os.Bundle
 import android.util.Base64
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
-import com.example.exotrade.activities.BaseActivity
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.exotrade.Adapters.ConversationAdapter
 import com.example.exotrade.ExoTradeApplication
 import com.example.exotrade.models.Conversation
-import com.example.exotrade.R
 import com.example.exotrade.databinding.MsgActivityInboxBinding
 import com.example.exotrade.data.SessionRepository
-import com.example.exotrade.utils.Helpers
-import com.example.exotrade.utils.NavigationHelper
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
@@ -25,27 +24,36 @@ import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.int
 
 /**
- * Activity displaying the list of all active user conversations.
+ * Fragment displaying the list of all active user conversations.
  * Summarizes the last message, unread status, and other participant's identity.
  */
-class InboxActivity : BaseActivity() {
+class InboxFragment : Fragment() {
 
-    private lateinit var binding: MsgActivityInboxBinding
+    private var _binding: MsgActivityInboxBinding? = null
+    private val binding get() = _binding!!
+    
     private lateinit var session: SessionRepository
     private lateinit var adapter: ConversationAdapter
     private var pollJob: Job? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = MsgActivityInboxBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = MsgActivityInboxBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         session = ExoTradeApplication.container.sessionRepository
         
-        binding.rvConversations.layoutManager = LinearLayoutManager(this)
+        binding.rvConversations.layoutManager = LinearLayoutManager(requireContext())
         adapter = ConversationAdapter(object : ConversationAdapter.OnConversationClickListener {
             override fun onConversationClick(conversation: Conversation) {
-                val intent = Intent(this@InboxActivity, ChatActivity::class.java).apply {
+                val intent = Intent(requireContext(), ChatActivity::class.java).apply {
                     putExtra("conversation_id", conversation.id)
                     putExtra("other_username", conversation.otherUsername)
                     putExtra("other_profile_pic", conversation.otherProfilePic)
@@ -55,15 +63,14 @@ class InboxActivity : BaseActivity() {
             }
         })
         binding.rvConversations.adapter = adapter
-
-        NavigationHelper.setup(this, binding.bottomNavigation, R.id.nav_messages)
     }
 
     override fun onResume() {
         super.onResume()
-        fetchConversations()
-        startPolling()
-        Helpers.updateUnreadBadge(binding.bottomNavigation)
+        if (!isHidden) {
+            fetchConversations()
+            startPolling()
+        }
     }
 
     override fun onPause() {
@@ -71,8 +78,19 @@ class InboxActivity : BaseActivity() {
         stopPolling()
     }
 
+    override fun onHiddenChanged(hidden: Boolean) {
+        super.onHiddenChanged(hidden)
+        if (hidden) {
+            stopPolling()
+        } else {
+            fetchConversations()
+            startPolling()
+        }
+    }
+
     private fun startPolling() {
-        pollJob = lifecycleScope.launch {
+        stopPolling() // Ensure only one job is active
+        pollJob = viewLifecycleOwner.lifecycleScope.launch {
             while (isActive) {
                 delay(3000)
                 fetchConversations()
@@ -82,13 +100,14 @@ class InboxActivity : BaseActivity() {
 
     private fun stopPolling() {
         pollJob?.cancel()
+        pollJob = null
     }
 
     private fun fetchConversations() {
         binding.progressBar.visibility = View.VISIBLE
         val params = session.authParams()
 
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val response: String = ExoTradeApplication.container.apiService.postForm("messaging/get_conversations", params)
                 binding.progressBar.visibility = View.GONE
@@ -130,12 +149,17 @@ class InboxActivity : BaseActivity() {
                     adapter.submitList(list)
                     binding.lblEmpty.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
                 } else {
-                    Toast.makeText(this@InboxActivity, json["message"]?.jsonPrimitive?.content ?: "Failed to load messages", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), json["message"]?.jsonPrimitive?.content ?: "Failed to load messages", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 binding.progressBar.visibility = View.GONE
-                Toast.makeText(this@InboxActivity, "Error loading conversations", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Error loading conversations", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

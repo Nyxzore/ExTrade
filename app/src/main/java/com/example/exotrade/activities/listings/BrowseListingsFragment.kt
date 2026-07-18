@@ -4,12 +4,14 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
-import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -18,7 +20,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.exotrade.Adapters.ListingAdapter
 import com.example.exotrade.ExoTradeApplication
 import com.example.exotrade.R
-import com.example.exotrade.activities.BaseActivity
 import com.example.exotrade.activities.breeding.BreedingFeed
 import com.example.exotrade.activities.profile.Profile
 import com.example.exotrade.data.SessionRepository
@@ -32,12 +33,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Main marketplace feed activity.
+ * Main marketplace feed fragment.
  * Displays a searchable, filterable, and paginated list of animal listings.
  */
-class BrowseListings : BaseActivity() {
-    private lateinit var binding: ListingActivityBrowseBinding
-    private val session: SessionRepository = ExoTradeApplication.container.sessionRepository
+class BrowseListingsFragment : Fragment() {
+    private var _binding: ListingActivityBrowseBinding? = null
+    private val binding get() = _binding!!
+    
+    private val session: SessionRepository by lazy { ExoTradeApplication.container.sessionRepository }
     private lateinit var adapter: ListingAdapter
     private lateinit var layoutManager: LinearLayoutManager
     
@@ -45,10 +48,17 @@ class BrowseListings : BaseActivity() {
     
     private var searchJob: Job? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ListingActivityBrowseBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = ListingActivityBrowseBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         lifecycleScope.launch {
             ExoTradeApplication.container.speciesRepository.preloadCache()
@@ -69,7 +79,7 @@ class BrowseListings : BaseActivity() {
             override fun afterTextChanged(s: Editable?) {
                 val query = s.toString().trim()
                 searchJob?.cancel()
-                searchJob = lifecycleScope.launch {
+                searchJob = viewLifecycleOwner.lifecycleScope.launch {
                     delay(400)
                     viewModel.setSearchQuery(query)
                 }
@@ -78,19 +88,16 @@ class BrowseListings : BaseActivity() {
 
         binding.toggleFilter.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked && checkedId == R.id.btnFilterBreeding) {
-                startActivity(Intent(this, BreedingFeed::class.java))
-                finish()
+                startActivity(Intent(requireContext(), BreedingFeed::class.java))
             }
         }
 
-        NavigationHelper.setup(this, binding.bottomNavigation, R.id.nav_home)
-
-        layoutManager = LinearLayoutManager(this)
+        layoutManager = LinearLayoutManager(requireContext())
         binding.rvListings.layoutManager = layoutManager
 
         adapter = ListingAdapter(ArrayList(), object : ListingAdapter.OnListingListener {
             override fun onListingClick(listing: Listing) {
-                val intent = Intent(this@BrowseListings, ListingDetails::class.java)
+                val intent = Intent(requireContext(), ListingDetails::class.java)
                 intent.putExtra("listing_id", listing.id)
                 startActivity(intent)
             }
@@ -112,8 +119,8 @@ class BrowseListings : BaseActivity() {
     }
 
     private fun observeViewModel() {
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.listings.collect { listings ->
                         adapter.setListings(listings)
@@ -140,12 +147,11 @@ class BrowseListings : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
-        Helpers.updateUnreadBadge(binding.bottomNavigation)
-        Helpers.checkAdminNotifications(this)
+        Helpers.checkAdminNotifications(requireActivity())
     }
 
     private fun showListingMenu(listing: Listing, view: View) {
-        val popup = PopupMenu(this, view)
+        val popup = PopupMenu(requireContext(), view)
         val isOwner = session.getUserUUID() != null && session.getUserUUID() == listing.sellerId
 
         if (isOwner) {
@@ -164,25 +170,25 @@ class BrowseListings : BaseActivity() {
 
         popup.setOnMenuItemClickListener { item ->
             when (item.title.toString()) {
-                "Delete" -> listing.id?.let { deleteListing(it) }
+                "Delete" -> listing.id.let { deleteListing(it) }
                 "Edit" -> {
-                    val intent = Intent(this, EditListing::class.java)
+                    val intent = Intent(requireContext(), EditListing::class.java)
                     intent.putExtra("listing_id", listing.id)
                     startActivity(intent)
                 }
-                "WhatsApp Seller" -> SocialLinkUtils.openWhatsApp(this, listing.whatsapp)
+                "WhatsApp Seller" -> SocialLinkUtils.openWhatsApp(requireActivity(), listing.whatsapp)
                 "View Seller Profile" -> {
-                    val intent = Intent(this, Profile::class.java)
+                    val intent = Intent(requireContext(), Profile::class.java)
                     intent.putExtra("user_id", listing.sellerId)
                     startActivity(intent)
                 }
                 "Share" -> ShareUtils.shareListingAsImage(
-                    this, listing.id ?: "", listing.commonName, listing.scientificName,
+                    requireActivity(), listing.id, listing.commonName, listing.scientificName,
                     listing.price, listing.description, listing.imageUrl,
                     "sold" == listing.status, "sale", listing.whatsapp,
                     listing.facebook, listing.instagram
                 )
-                "Report" -> ReportDialog.show(this, "listing", listing.id ?: "", null)
+                "Report" -> ReportDialog.show(requireContext(), "listing", listing.id ?: "", null)
             }
             true
         }
@@ -190,24 +196,29 @@ class BrowseListings : BaseActivity() {
     }
 
     private fun deleteListing(listingId: String) {
-        AlertDialog.Builder(this)
+        AlertDialog.Builder(requireContext())
             .setTitle("Delete Listing")
             .setMessage("Are you sure you want to delete this listing?")
             .setPositiveButton("Yes") { _, _ ->
                 val params = session.authParams().toMutableMap()
                 params["listing_id"] = listingId
-                lifecycleScope.launch {
+                viewLifecycleOwner.lifecycleScope.launch {
                     try {
                         val response: String = ExoTradeApplication.container.apiService.postForm("listings/delete_listing", params)
                         if (response.contains("\"status\":\"success\"")) {
-                            Toast.makeText(this@BrowseListings, "Deleted", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(requireContext(), "Deleted", Toast.LENGTH_SHORT).show()
                             viewModel.refresh()
                         }
                     } catch (e: Exception) {
-                        Toast.makeText(this@BrowseListings, "Error deleting listing", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Error deleting listing", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
             .setNegativeButton("No", null).show()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

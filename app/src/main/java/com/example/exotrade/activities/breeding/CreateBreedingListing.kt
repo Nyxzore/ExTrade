@@ -12,7 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import com.example.exotrade.ExoTradeApplication
 import com.example.exotrade.R
 import com.example.exotrade.activities.BaseActivity
-import com.example.exotrade.activities.profile.Profile
+import com.example.exotrade.activities.MainHostActivity
 import com.example.exotrade.databinding.BreedingActivityCreateBinding
 import com.example.exotrade.data.SessionRepository
 import com.example.exotrade.data.SpeciesRepository
@@ -225,7 +225,10 @@ class CreateBreedingListing : BaseActivity() {
                 val json = Json.parseToJsonElement(response).jsonObject
                 if (json["status"]?.jsonPrimitive?.content == "success") {
                     Toast.makeText(this@CreateBreedingListing, "Breeding listing posted!", Toast.LENGTH_SHORT).show()
-                    startActivity(Intent(this@CreateBreedingListing, Profile::class.java))
+                    val intent = Intent(this@CreateBreedingListing, MainHostActivity::class.java).apply {
+                        putExtra("initial_tab", R.id.nav_profile)
+                    }
+                    startActivity(intent)
                     finish()
                 } else {
                     Toast.makeText(this@CreateBreedingListing, json["message"]?.jsonPrimitive?.content, Toast.LENGTH_SHORT).show()

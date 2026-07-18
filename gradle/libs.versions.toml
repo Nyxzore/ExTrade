@@ -16,6 +16,7 @@ jna = "5.17.0"
 swiperefreshlayout = "1.1.0"
 lifecycle = "2.7.0"
 playServicesAuth = "21.3.0"
+fragmentKtx = "1.8.0"
 kotlin = "2.0.0"
 
 [libraries]
@@ -26,6 +27,7 @@ androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-co
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activityKtx" }
+androidx-fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragmentKtx" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 androidx-swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
 androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle" }

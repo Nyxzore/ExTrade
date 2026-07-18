@@ -17,6 +17,7 @@
         android:theme="@style/Theme.Exotrade">
 
 
+        <activity android:name=".activities.MainHostActivity" />
         <activity android:name=".activities.NoInternetActivity" />
         <activity android:name=".activities.UpdateRequiredActivity" />
         <activity android:name=".activities.admin.AdminActivity" />
@@ -29,16 +30,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".activities.breeding.BreedingFeed" />
+        <activity
+            android:name=".activities.breeding.BreedingFeed"
+            android:launchMode="singleTask" />
         <activity android:name=".activities.breeding.BreedingListingDetails" />
         <activity android:name=".activities.breeding.CreateBreedingListing" />
         <activity android:name=".activities.breeding.MyBreedingListings" />
-        <activity android:name=".activities.listings.BrowseListings" />
-        <activity android:name=".activities.listings.CreateListing" />
         <activity android:name=".activities.listings.EditListing" />
         <activity android:name=".activities.listings.ListingDetails" />
         <activity android:name=".activities.messaging.ChatActivity" />
-        <activity android:name=".activities.messaging.InboxActivity" />
         <activity android:name=".activities.profile.EditAccount" />
         <activity android:name=".activities.profile.FriendsActivity" />
         <activity android:name=".activities.profile.Profile" />

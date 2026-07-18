@@ -13,7 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.exotrade.Adapters.ListingAdapter
 import com.example.exotrade.models.Listing
 import com.example.exotrade.R
-import com.example.exotrade.activities.listings.BrowseListings
+import com.example.exotrade.activities.MainHostActivity
 import com.example.exotrade.databinding.BreedingActivityFeedBinding
 import com.example.exotrade.utils.Helpers
 import com.example.exotrade.utils.NavigationHelper
@@ -89,7 +89,7 @@ class BreedingFeed : AppCompatActivity() {
 
         binding.toggleFilter.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked && checkedId == R.id.btnFilterSale) {
-                startActivity(Intent(this, BrowseListings::class.java))
+                startActivity(Intent(this, MainHostActivity::class.java))
                 finish()
             }
         }
