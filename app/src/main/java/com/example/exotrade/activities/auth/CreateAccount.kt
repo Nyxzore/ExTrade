@@ -148,7 +148,7 @@ class CreateAccount : AppCompatActivity() {
                     val uuid = json["uuid"]?.jsonPrimitive?.content ?: ""
                     val token = json["auth_token"]?.jsonPrimitive?.content ?: ""
 
-                    session.createLoginSession(uuid, token, true)
+                    session.createLoginSession(uuid, token, username, false, 0, true)
                     session.updateUserInfo(
                         username = username,
                         profilePic = json["profile_picture"]?.jsonPrimitive?.content ?: "",

@@ -19,7 +19,7 @@ class SharedContainer(context: Context) {
     }
 
     val speciesRepository: SpeciesRepository by lazy {
-        SpeciesRepository(apiService)
+        SpeciesRepository(apiService, context)
     }
 
     val encryptionManager: EncryptionManager by lazy {

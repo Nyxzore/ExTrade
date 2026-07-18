@@ -8,5 +8,6 @@ data class Species(
     val scientificName: String,
     val commonName: String? = null,
     val family: String? = null,
-    val order: String? = null
+    val order: String? = null,
+    val speciesLsid: String? = null
 )

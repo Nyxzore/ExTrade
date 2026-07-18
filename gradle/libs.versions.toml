@@ -16,6 +16,7 @@ jna = "5.17.0"
 swiperefreshlayout = "1.1.0"
 lifecycle = "2.7.0"
 playServicesAuth = "21.3.0"
+kotlin = "2.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -46,4 +47,5 @@ play-services-auth = { group = "com.google.android.gms", name = "play-services-a
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

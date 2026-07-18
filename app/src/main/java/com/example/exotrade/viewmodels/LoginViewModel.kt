@@ -1,12 +1,18 @@
 package com.example.exotrade.viewmodels
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.exotrade.data.ApiService
 import com.example.exotrade.data.SessionRepository
 import com.example.exotrade.data.SpeciesRepository
 import com.example.exotrade.utils.EncryptionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.int
 
 class LoginViewModel(
     private val apiService: ApiService,
@@ -27,14 +33,69 @@ class LoginViewModel(
     val isLoading = _isLoading.asStateFlow()
 
     fun verifySession() {
-        // Implementation
+        if (!sessionRepository.isLoggedIn()) {
+            _sessionVerified.value = false
+            return
+        }
+        
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val params = sessionRepository.authParams()
+                val response: String = apiService.postForm("auth/auth.php", params + ("mode" to "verify"))
+                val json = Json.parseToJsonElement(response).jsonObject
+                if (json["status"]?.jsonPrimitive?.content == "success") {
+                    _sessionVerified.value = true
+                } else {
+                    sessionRepository.clearSession()
+                    _sessionVerified.value = false
+                }
+            } catch (e: Exception) {
+                _sessionVerified.value = false
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 
     fun login(username: String, password: String, rememberMe: Boolean) {
-        // Implementation
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            try {
+                val params = mapOf(
+                    "username" to username,
+                    "password" to password,
+                    "mode" to "login"
+                )
+                val response: String = apiService.postForm("auth/auth.php", params)
+                val json = Json.parseToJsonElement(response).jsonObject
+                
+                if (json["status"]?.jsonPrimitive?.content == "success") {
+                    val uuid = json["uuid"]?.jsonPrimitive?.content ?: ""
+                    val token = json["auth_token"]?.jsonPrimitive?.content ?: ""
+                    val isAdmin = json["is_admin"]?.jsonPrimitive?.content == "true"
+                    val tier = json["subscription_tier"]?.jsonPrimitive?.int ?: 0
+                    
+                    sessionRepository.createLoginSession(uuid, token, username, isAdmin, tier, rememberMe)
+                    // Note: auth_token is handled via authParams in SessionRepository usually, 
+                    // but createLoginSession doesn't save it. I should check SessionRepository.
+                    
+                    _loginSuccess.value = true
+                } else {
+                    _errorMessage.value = json["message"]?.jsonPrimitive?.content ?: "Login failed"
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Connection error"
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 
     fun preloadSpecies() {
-        // Implementation
+        viewModelScope.launch {
+            speciesRepository.preloadCache()
+        }
     }
 }

@@ -23,12 +23,14 @@ class SessionRepository(context: Context) {
         )
     }
 
-    fun createLoginSession(uuid: String, username: String, isAdmin: Boolean, tier: Int = 0) {
+    fun createLoginSession(uuid: String, authToken: String, username: String, isAdmin: Boolean, tier: Int = 0, rememberMe: Boolean = false) {
         prefs.edit()
             .putString("user_uuid", uuid)
+            .putString("auth_token", authToken)
             .putString("username", username)
             .putBoolean("is_admin", isAdmin)
             .putInt("subscription_tier", tier)
+            .putBoolean("remember_me", rememberMe)
             .putBoolean("is_logged_in", true)
             .apply()
     }
