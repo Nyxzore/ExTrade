@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="tier_1_orange">#FFF57C00</color>
+    <color name="orange_primary">#FFF57C00</color>
+    <color name="orange_primary_dark">#FFE64A19</color>
+    <color name="nav_item_tint">#FF757575</color>
+</resources>

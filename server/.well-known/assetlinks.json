@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.example.exotrade",
+      "sha256_cert_fingerprints": [
+        "8E:10:96:81:38:F5:59:BF:8F:73:79:E8:D3:E0:AB:ED:A3:FF:64:E8:01:1C:22:EC:B4:E3:16:74:98:05:13:E0"
+      ]
+    }
+  }
+]
