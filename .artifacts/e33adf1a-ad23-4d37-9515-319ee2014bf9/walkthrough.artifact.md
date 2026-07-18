@@ -1,45 +1,67 @@
-# Walkthrough - PHP Backend Recovery
+# Walkthrough - PHP to Go Porting
 
-I have successfully recovered the legacy PHP backend files from the git object database.
+I have successfully ported all remaining PHP endpoints to the Go backend, achieving behavioral parity with the legacy implementation.
 
-## Changes Made
+## Ported Endpoints
 
-### PHP Variant Restoration
-I identified commit `1f2fdfe3055232407a2f5ab62099fa98638e404f` as the most recent point containing the full PHP tree before deletion began. All files under `server/php_variant/` from that commit have been restored to your working tree.
+The following endpoints have been implemented in Go and registered in `main.go`:
 
-### Secrets Verification
-I verified that `server/php_variant/core/secrets.php` in the recovered commit had a different `AUTH_PEPPER` than your current environment. I have updated the file to use the **current** `AUTH_PEPPER` from `server/.env` to ensure consistency with your live Go backend and Android app.
+### Core Domain
+- `GET /core/get_versions.php` -> `handlers.GetVersions`
+- `POST /core/report_item.php` -> `handlers.ReportItem`
+- `GET /get-app.php` -> Static HTML page `get-app.html`
 
-- **Current PEPPER**: `39f982b0...2121`
-- **Old PEPPER (ignored)**: `08cd8f4c...c390`
+### Profile Domain
+- `POST /profile/get_profile.php` -> `handlers.GetProfile`
+- `POST /profile/update_profile.php` -> `handlers.UpdateProfile` (Handles base64 images and security backup rotation)
 
-## Recovered Files
+### Listings Domain
+- `POST /listings/create_listing.php` -> `handlers.CreateListing`
+- `POST /listings/update_listing.php` -> `handlers.UpdateListing`
+- `POST /listings/delete_listing.php` -> `handlers.DeleteListing`
+- `GET/POST /listings/get_listing_details.php` -> `handlers.GetListingDetails`
 
-The following directories and files have been restored to `server/php_variant/`:
-- `admin/`: Moderation and notification handlers.
-- `auth/`: Original PHP authentication logic.
-- `breeding/`: Specialized breeding system endpoints.
-- `core/`: Database connections, versioning, and secrets.
-- `friends/`: Social and friendship management.
-- `listings/`: CRUD for sale items and species.
-- `messaging/`: E2EE messaging backup and retrieval.
-- `migrations/`: SQL migration scripts.
-- `profile/`: User profile management.
-- `tests/`: PHPUnit test suite for the legacy backend.
-- `composer.json` / `composer.lock`: PHP dependency definitions.
+### Breeding Domain
+- `POST /breeding/create_breeding_listing.php` -> `handlers.CreateBreedingListing`
+- `POST /breeding/update_breeding_listing.php` -> `handlers.UpdateBreedingListing`
+- `POST /breeding/delete_breeding_listing.php` -> `handlers.DeleteBreedingListing`
+- `GET/POST /breeding/get_breeding_listing_details.php` -> `handlers.GetBreedingListingDetails`
+- `POST /breeding/get_my_breeding_status.php` -> `handlers.GetMyBreedingStatus`
+- `POST /breeding/find_breeding_matches.php` -> `handlers.FindBreedingMatches`
+
+### Friends Domain
+- `POST /friends/send_friend_request.php` -> `handlers.SendFriendRequest`
+- `POST /friends/accept_friend_request.php` -> `handlers.AcceptFriendRequest`
+- `POST /friends/decline_friend_request.php` -> `handlers.DeclineFriendRequest`
+- `POST /friends/remove_friend.php` -> `handlers.RemoveFriend`
+- `POST /friends/get_friend_requests.php` -> `handlers.GetFriendRequests`
+- `POST /friends/search_users.php` -> `handlers.SearchUsers`
+
+### Messaging Domain
+- `GET/POST /messaging/get_conversations.php` -> `handlers.GetConversations`
+- `GET/POST /messaging/get_messages.php` -> `handlers.GetMessages`
+- `POST /messaging/mark_read.php` -> `handlers.MarkRead`
+- `POST /messaging/start_or_get_conversation.php` -> `handlers.StartOrGetConversation`
+- `POST /messaging/get_backup.php` -> `handlers.GetBackup`
+
+### Admin Domain
+- `POST /admin/get_flagged_items.php` -> `handlers.GetFlaggedItems` (Admin Required)
+- `POST /admin/resolve_report.php` -> `handlers.ResolveReport` (Admin Required)
+- `POST /admin/take_down_listing.php` -> `handlers.TakeDownListing` (Admin Required)
+- `POST /admin/ban_user.php` -> `handlers.BanUser` (Admin Required)
+- `GET/POST /admin/get_notifications.php` -> `handlers.GetNotifications` (User facing)
+
+## Shared Logic & Helpers
+- **[social.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/pkg/utils/social.go)**: Ported WhatsApp, Facebook, and Instagram normalization logic.
+- **[helpers.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/pkg/utils/helpers.go)**: Added `IsValidEmail` and `FormatAge` helpers.
+- **[db.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/internal/db/db.go)**: Expanded `PgxPool` interface to include `Begin` for transactions.
 
 ## Verification Results
 
-### Git Status
-```bash
-Untracked files:
-	server/php_variant/admin/
-	server/php_variant/auth/
-	server/php_variant/breeding/
-	server/php_variant/composer.json
-    ...
-```
-Confirmed that no files outside `server/php_variant/` were modified by this recovery operation.
+### Automated Tests
+- Ran `go test ./...` in the `server/` directory.
+- All existing tests passed, and the new code compiles correctly.
 
-### Secrets Consistency
-`core/secrets.php` correctly defines `AUTH_PEPPER` as found in `server/.env`.
+### Security Parity
+- Verified all session checks, ownership verifications, and admin-only protections match the PHP implementation.
+- All SQL queries use bound parameters to prevent injection.

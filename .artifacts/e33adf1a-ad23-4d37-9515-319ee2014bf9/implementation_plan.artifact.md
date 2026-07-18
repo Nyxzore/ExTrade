@@ -1,26 +1,79 @@
-# Recover Deleted PHP Backend Files
+# Implementation Plan: Port PHP Endpoints to Go
 
-The legacy PHP backend files in `server/php_variant/` were deleted in a dangling branch history that is not reachable from the current `main` branch. The files were progressively removed starting around commit `da9ac82` and completely gone in `c69e451`. The most complete state of the `server/php_variant/` directory exists in commit `1f2fdfe3055232407a2f5ab62099fa98638e404f`.
+This plan outlines the systematic porting of legacy PHP endpoints to the Go backend, ensuring behavioral parity with the existing Android client.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> The recovery will be performed by extracting files from a dangling commit (`1f2fdfe3055232407a2f5ab62099fa98638e404f`) discovered via `git fsck`. This commit is from July 16, 2026, with the message "Phase 0: untrack ignored files and update security settings".
+> - All Go handlers will use the established `utils.SendSuccess`/`utils.SendError` pattern to maintain consistent JSON response envelopes.
+> - Authentication and authorization checks will be strictly ported to match the legacy logic.
+> - No changes will be made to the Android client; Go routes will be registered using identical `.php` paths.
 
 ## Proposed Changes
 
-### PHP Backend Recovery
+The porting will proceed in the following groups:
 
-#### [MODIFY] [server/php_variant/](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/php_variant/)
-- Restore all `.php`, `.sql`, `.json`, and configuration files that existed in `1f2fdfe`.
-- Preserve the current `core/secrets.php` if it contains the correct `AUTH_PEPPER` as found in the current `.env`.
+### 1. Core Endpoints
+- **[NEW] [core.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/internal/api/handlers/core.go)**:
+    - `core/get_versions.php`
+    - `core/report_item.php`
+- **[NEW] [social.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/pkg/utils/social.go)**: Port shared link normalization logic from `core/social_helpers.php`.
+- **[MODIFY] [main.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/main.go)**:
+    - Register core routes.
+    - Serve `get-app.php` (APK download info/page).
+
+### 2. Profile Endpoints
+- **[NEW] [profile.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/internal/api/handlers/profile.go)**:
+    - `profile/get_profile.php`
+    - `profile/update_profile.php`
+
+### 3. Listings (Remaining)
+- **[MODIFY] [listings.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/internal/api/handlers/listings.go)**:
+    - `listings/create_listing.php`
+    - `listings/update_listing.php`
+    - `listings/delete_listing.php`
+    - `listings/get_listing_details.php`
+
+### 4. Breeding (Remaining)
+- **[MODIFY] [breeding.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/internal/api/handlers/breeding.go)**:
+    - `breeding/create_breeding_listing.php`
+    - `breeding/update_breeding_listing.php`
+    - `breeding/delete_breeding_listing.php`
+    - `breeding/get_breeding_listing_details.php`
+    - `breeding/get_my_breeding_status.php`
+    - `breeding/find_breeding_matches.php`
+
+### 5. Friends (Remaining)
+- **[MODIFY] [friends.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/internal/api/handlers/friends.go)**:
+    - `friends/send_friend_request.php`
+    - `friends/accept_friend_request.php`
+    - `friends/decline_friend_request.php`
+    - `friends/remove_friend.php`
+    - `friends/get_friend_requests.php`
+    - `friends/search_users.php`
+
+### 6. Messaging (Remaining)
+- **[MODIFY] [messaging.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/internal/api/handlers/messaging.go)**:
+    - `messaging/get_conversations.php`
+    - `messaging/get_messages.php`
+    - `messaging/mark_read.php`
+    - `messaging/start_or_get_conversation.php`
+    - `messaging/get_backup.php`
+
+### 7. Admin Endpoints
+- **[NEW] [admin.go](file:///home/nyxzore/AndroidStudioProjects/exotrade/server/internal/api/handlers/admin.go)**:
+    - `admin/get_flagged_items.php`
+    - `admin/resolve_report.php`
+    - `admin/take_down_listing.php`
+    - `admin/ban_user.php`
+    - `admin/get_notifications.php`
 
 ## Verification Plan
 
 ### Automated Tests
-- Compare the list of files in `server/php_variant/` after recovery against the file list in commit `1f2fdfe`.
-- Verify that `core/secrets.php` contains the same `AUTH_PEPPER` as `server/.env`.
+- Create `_test.go` files for each handler domain (e.g., `profile_test.go`, `admin_test.go`).
+- Run `go test ./...` in the `server/` directory to verify all handlers.
 
 ### Manual Verification
-- Check `git status` to ensure no files outside `server/php_variant/` were modified.
-- List all recovered files for the user.
+- Perform side-by-side JSON response comparisons between PHP and Go for key endpoints using `curl` or similar tools.
+- Verify end-to-end flows in the Android app (if applicable via manual testing/logs).
