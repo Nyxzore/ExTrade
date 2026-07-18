@@ -6,6 +6,8 @@ import com.example.exotrade.data.ApiService
 import com.example.exotrade.data.SessionRepository
 import com.example.exotrade.data.SpeciesRepository
 import com.example.exotrade.utils.EncryptionManager
+import io.ktor.client.network.sockets.*
+import io.ktor.client.plugins.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -51,6 +53,8 @@ class LoginViewModel(
                     _sessionVerified.value = false
                 }
             } catch (e: Exception) {
+                // If verification fails due to server being down, we don't necessarily want to log out,
+                // but for now, the existing logic is to treat it as session invalid.
                 _sessionVerified.value = false
             } finally {
                 _isLoading.value = false
@@ -69,24 +73,31 @@ class LoginViewModel(
                     "mode" to "login"
                 )
                 val response: String = apiService.postForm("auth/auth.php", params)
-                val json = Json.parseToJsonElement(response).jsonObject
                 
-                if (json["status"]?.jsonPrimitive?.content == "success") {
-                    val uuid = json["uuid"]?.jsonPrimitive?.content ?: ""
-                    val token = json["auth_token"]?.jsonPrimitive?.content ?: ""
-                    val isAdmin = json["is_admin"]?.jsonPrimitive?.content == "true"
-                    val tier = json["subscription_tier"]?.jsonPrimitive?.int ?: 0
+                try {
+                    val json = Json.parseToJsonElement(response).jsonObject
                     
-                    sessionRepository.createLoginSession(uuid, token, username, isAdmin, tier, rememberMe)
-                    // Note: auth_token is handled via authParams in SessionRepository usually, 
-                    // but createLoginSession doesn't save it. I should check SessionRepository.
-                    
-                    _loginSuccess.value = true
-                } else {
-                    _errorMessage.value = json["message"]?.jsonPrimitive?.content ?: "Login failed"
+                    if (json["status"]?.jsonPrimitive?.content == "success") {
+                        val uuid = json["uuid"]?.jsonPrimitive?.content ?: ""
+                        val token = json["auth_token"]?.jsonPrimitive?.content ?: ""
+                        val isAdmin = json["is_admin"]?.jsonPrimitive?.content == "true"
+                        val tier = json["subscription_tier"]?.jsonPrimitive?.int ?: 0
+                        
+                        sessionRepository.createLoginSession(uuid, token, username, isAdmin, tier, rememberMe)
+                        _loginSuccess.value = true
+                    } else {
+                        _errorMessage.value = json["message"]?.jsonPrimitive?.content ?: "Login failed"
+                    }
+                } catch (e: Exception) {
+                    // Server returned something that is not JSON (likely an HTML error page)
+                    _errorMessage.value = "Server is currently down (Invalid response)"
                 }
             } catch (e: Exception) {
-                _errorMessage.value = "Connection error"
+                _errorMessage.value = when (e) {
+                    is HttpRequestTimeoutException, is ConnectTimeoutException, is java.net.ConnectException -> 
+                        "Server is currently down (Unreachable)"
+                    else -> "Connection error"
+                }
             } finally {
                 _isLoading.value = false
             }

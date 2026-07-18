@@ -1,0 +1,5 @@
+- [x] Create temporary recovery directory
+- [x] Extract `server/php_variant/` from commit `1f2fdfe3055232407a2f5ab62099fa98638e404f`
+- [x] Copy recovered files to working tree
+- [x] Verify `core/secrets.php` against current `AUTH_PEPPER`
+- [x] Final verification and cleanup
