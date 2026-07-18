@@ -42,6 +42,7 @@
         <activity android:name=".activities.profile.EditAccount" />
         <activity android:name=".activities.profile.FriendsActivity" />
         <activity android:name=".activities.profile.Profile" />
+        <activity android:name=".activities.profile.SettingsActivity" />
 
     </application>
 

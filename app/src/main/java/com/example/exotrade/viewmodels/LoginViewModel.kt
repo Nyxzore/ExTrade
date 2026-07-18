@@ -1,3 +1,4 @@
+
 package com.example.exotrade.viewmodels
 
 import androidx.lifecycle.ViewModel
@@ -8,6 +9,7 @@ import com.example.exotrade.data.SpeciesRepository
 import com.example.exotrade.utils.EncryptionManager
 import io.ktor.client.network.sockets.*
 import io.ktor.client.plugins.*
+import io.ktor.http.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -53,8 +55,9 @@ class LoginViewModel(
                     _sessionVerified.value = false
                 }
             } catch (e: Exception) {
-                // If verification fails due to server being down, we don't necessarily want to log out,
-                // but for now, the existing logic is to treat it as session invalid.
+                if (e is ClientRequestException && e.response.status == HttpStatusCode.Unauthorized) {
+                    sessionRepository.clearSession()
+                }
                 _sessionVerified.value = false
             } finally {
                 _isLoading.value = false

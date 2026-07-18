@@ -73,6 +73,17 @@ func AuthHandler(c *gin.Context) {
 		})
 	} else {
 		// Registration
+		if !utils.IsValidEmail(email) {
+			utils.SendError(c, http.StatusBadRequest, "Invalid email format", nil)
+			return
+		}
+
+		valid, err := utils.VerifyEmailDomain(email)
+		if err != nil || !valid {
+			utils.SendError(c, http.StatusBadRequest, "Email domain is unreachable or invalid", nil)
+			return
+		}
+
 		var exists bool
 		db.Pool.QueryRow(context.Background(), "SELECT EXISTS(SELECT 1 FROM users WHERE username = $1 OR email = $2)", username, email).Scan(&exists)
 		if exists {
@@ -96,7 +107,7 @@ func AuthHandler(c *gin.Context) {
 		var userID string
 		query := `INSERT INTO users (username, email, password_hash, profile_picture, public_key, encrypted_private_key, private_key_nonce, kdf_salt)
                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
-		err := db.Pool.QueryRow(context.Background(), query, username, email, string(hashedPassword), profilePic, publicKey, encPrivKey, privKeyNonce, kdfSalt).Scan(&userID)
+		err = db.Pool.QueryRow(context.Background(), query, username, email, string(hashedPassword), profilePic, publicKey, encPrivKey, privKeyNonce, kdfSalt).Scan(&userID)
 
 		if err != nil {
 			utils.SendError(c, http.StatusInternalServerError, "Registration failed", nil)

@@ -20,6 +20,8 @@ import kotlinx.coroutines.launch
  */
 object NavigationHelper {
 
+    private var lastNavTime = 0L
+
     /**
      * Configures the BottomNavigationView with item listeners and visibility logic.
      *
@@ -34,10 +36,10 @@ object NavigationHelper {
 
         bottomNav.selectedItemId = selectedItemId
         bottomNav.setOnItemSelectedListener { item ->
+            val now = System.currentTimeMillis()
+            if (now - lastNavTime < 400) return@setOnItemSelectedListener false
+            
             val itemId = item.itemId
-            if (itemId == selectedItemId) {
-                return@setOnItemSelectedListener true // already on this tab — no-op, do not navigate
-            }
             val target: Class<*> = when (itemId) {
                 R.id.nav_home -> BrowseListings::class.java
                 R.id.nav_messages -> InboxActivity::class.java
@@ -46,13 +48,20 @@ object NavigationHelper {
                 R.id.nav_admin -> AdminActivity::class.java
                 else -> return@setOnItemSelectedListener false
             }
-            
-            activity.startActivity(Intent(activity, target))
-            activity.overridePendingTransition(0, 0) // Disable transition for snappiness
-            activity.finish()
-            activity.overridePendingTransition(0, 0) // Disable transition for snappiness
 
-            // Trigger background species sync check when moving between screens
+            // If we are already in the PRIMARY activity for this tab, do nothing
+            if (activity::class.java == target) {
+                return@setOnItemSelectedListener true 
+            }
+            
+            lastNavTime = now
+            val intent = Intent(activity, target).apply {
+                addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            }
+            
+            activity.startActivity(intent)
+            activity.overridePendingTransition(0, 0) 
+
             CoroutineScope(Dispatchers.Main).launch {
                 ExoTradeApplication.container.speciesRepository.syncFromServer(false)
             }

@@ -7,10 +7,10 @@ import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.exotrade.ExoTradeApplication
 import com.example.exotrade.R
+import com.example.exotrade.activities.BaseActivity
 import com.example.exotrade.databinding.ListingActivityCreateBinding
 import com.example.exotrade.data.SessionRepository
 import com.example.exotrade.data.SpeciesRepository
@@ -27,7 +27,7 @@ import kotlinx.serialization.json.jsonPrimitive
  * Activity for modifying an existing animal listing.
  * Pre-populates fields with current listing data and allows updating metadata or photos.
  */
-class EditListing : AppCompatActivity() {
+class EditListing : BaseActivity() {
 
     private lateinit var binding: ListingActivityCreateBinding
     private lateinit var session: SessionRepository
@@ -74,7 +74,6 @@ class EditListing : AppCompatActivity() {
 
         binding.bottomNavigation.visibility = View.GONE
         binding.toggleListingType.visibility = View.GONE
-        binding.lblListingType.visibility = View.GONE
 
         binding.btnAddImage.setOnClickListener { imagePickerLauncher.launch("image/*") }
         binding.btnCreateListing.setOnClickListener { updateListing() }

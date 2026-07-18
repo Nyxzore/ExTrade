@@ -17,7 +17,7 @@ func init() {
 
 func TestGetBreedingListings_Filters(t *testing.T) {
 	r := gin.New()
-	r.POST("/breeding/get_breeding_listings.php", func(c *gin.Context) {
+	r.POST("/breeding/get_breeding_listings", func(c *gin.Context) {
 		c.Set("userID", "test-user-uuid")
 		GetBreedingListings(c)
 	})
@@ -26,7 +26,7 @@ func TestGetBreedingListings_Filters(t *testing.T) {
 	form.Add("breeding_type", "loan")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/breeding/get_breeding_listings.php", strings.NewReader(form.Encode()))
+	req, _ := http.NewRequest("POST", "/breeding/get_breeding_listings", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	r.ServeHTTP(w, req)
 
@@ -37,13 +37,13 @@ func TestGetBreedingListings_Filters(t *testing.T) {
 
 func TestGetBreedingListings_DefaultPagination(t *testing.T) {
 	r := gin.New()
-	r.POST("/breeding/get_breeding_listings.php", func(c *gin.Context) {
+	r.POST("/breeding/get_breeding_listings", func(c *gin.Context) {
 		c.Set("userID", "test-user-uuid")
 		GetBreedingListings(c)
 	})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/breeding/get_breeding_listings.php", strings.NewReader(""))
+	req, _ := http.NewRequest("POST", "/breeding/get_breeding_listings", strings.NewReader(""))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	r.ServeHTTP(w, req)
 
@@ -54,7 +54,7 @@ func TestGetBreedingListings_DefaultPagination(t *testing.T) {
 
 func TestGetBreedingListings_OffsetParam(t *testing.T) {
 	r := gin.New()
-	r.POST("/breeding/get_breeding_listings.php", func(c *gin.Context) {
+	r.POST("/breeding/get_breeding_listings", func(c *gin.Context) {
 		c.Set("userID", "test-user-uuid")
 		GetBreedingListings(c)
 	})
@@ -64,7 +64,7 @@ func TestGetBreedingListings_OffsetParam(t *testing.T) {
 	form.Add("seed", "breeding-seed")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/breeding/get_breeding_listings.php", strings.NewReader(form.Encode()))
+	req, _ := http.NewRequest("POST", "/breeding/get_breeding_listings", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	r.ServeHTTP(w, req)
 

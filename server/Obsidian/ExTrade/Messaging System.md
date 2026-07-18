@@ -7,13 +7,13 @@ ExoTrade features a custom-built, End-to-End Encrypted (E2EE) messaging system d
 ### Activities
 - **[[InboxActivity.kt]]**:
     - Displays a list of active conversations.
-    - Observes the `messaging/get_conversations.php` endpoint.
+    - Observes the `messaging/get_conversations` endpoint.
     - Uses `ConversationAdapter` to render threads.
 - **[[ChatActivity.kt]]**:
     - The core messaging interface.
     - **Encryption**: Fetches the recipient's public key from the backend. Uses `EncryptionManager` to encrypt the `body` and generate a `nonce` before sending.
     - **Decryption**: Decrypts incoming message blobs using the user's private key (stored in `EncryptedSharedPreferences`).
-    - **Polling**: Current implementation uses a `Handler` or `Coroutine` loop to poll `messaging/get_messages.php` every 3 seconds.
+    - **Polling**: Current implementation uses a `Handler` or `Coroutine` loop to poll `messaging/get_messages` every 3 seconds.
     - **Staged Messages**: When a user contacts a seller from a listing, a "staged" listing reference is injected into the chat.
 
 ### Core Logic
@@ -26,9 +26,9 @@ ExoTrade features a custom-built, End-to-End Encrypted (E2EE) messaging system d
     - Supports "Listing Previews" as a specialized message type.
 
 ## Backend Interaction
-- **`messaging/send_message.php`**: Receives an encrypted blob, nonce, and recipient ID. (Implemented in Go).
-- **`messaging/get_messages.php`**: Returns encrypted blobs that only the recipient can open. (Legacy PHP - **Deprecated**).
-- **`messaging/start_or_get_conversation.php`**: Facilitates the initial key exchange and conversation metadata setup. (Legacy PHP - **Deprecated**).
+- **`messaging/send_message`**: Receives an encrypted blob, nonce, and recipient ID. (Implemented in Go).
+- **`messaging/get_messages`**: Returns encrypted blobs that only the recipient can open. (Legacy PHP - **Deprecated**).
+- **`messaging/start_or_get_conversation`**: Facilitates the initial key exchange and conversation metadata setup. (Legacy PHP - **Deprecated**).
 
 ## Security Architecture
 1. **Key Generation**: Identity keys (X25519) are generated on the first login via `EncryptionManager`.

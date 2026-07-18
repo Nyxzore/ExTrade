@@ -20,7 +20,8 @@
                 android:layout_height="?attr/actionBarSize"
                 app:title="@string/create_new_listing"
                 app:titleCentered="true"
-                app:titleTextAppearance="@style/TextAppearance.Material3.TitleLarge" />
+                app:titleTextAppearance="@style/TextAppearance.Material3.TitleLarge"
+                app:menu="@menu/menu_create_listing" />
 
         </com.google.android.material.appbar.AppBarLayout>
 
@@ -43,7 +44,7 @@
                     android:id="@+id/cardImage"
                     style="@style/Widget.Material3.CardView.Elevated"
                     android:layout_width="match_parent"
-                    android:layout_height="220dp"
+                    android:layout_height="180dp"
                     android:layout_marginBottom="24dp"
                     app:cardCornerRadius="24dp">
 
@@ -55,49 +56,25 @@
                             android:id="@+id/imgPreview"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:alpha="0.3"
+                            android:alpha="0.2"
                             android:contentDescription="@string/photos"
                             android:scaleType="centerCrop"
                             android:src="@drawable/logo" />
 
-                        <LinearLayout
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnAddImage"
+                            style="@style/Widget.Material3.Button.TonalButton"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_gravity="center"
-                            android:gravity="center"
-                            android:orientation="vertical">
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnAddImage"
-                                style="@style/Widget.Material3.Button.TonalButton"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/add_primary_photo"
-                                app:icon="@android:drawable/ic_menu_camera" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="@string/upload_hint"
-                                android:textAppearance="@style/TextAppearance.Material3.BodySmall" />
-
-                        </LinearLayout>
+                            android:text="@string/add_primary_photo"
+                            app:icon="@android:drawable/ic_menu_camera" />
 
                     </FrameLayout>
 
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Listing Type -->
-                <TextView
-                    android:id="@+id/lblListingType"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:text="@string/listing_type"
-                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                    android:textColor="?attr/colorPrimary" />
-
+                <!-- Listing Type Toggle -->
                 <com.google.android.material.button.MaterialButtonToggleGroup
                     android:id="@+id/toggleListingType"
                     android:layout_width="match_parent"
@@ -125,50 +102,45 @@
 
                 </com.google.android.material.button.MaterialButtonToggleGroup>
 
-                <!-- Species Information -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:text="@string/species_information"
-                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                    android:textColor="?attr/colorPrimary" />
-
+                <!-- Species Names -->
                 <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.App.TextInputLayout.NameInput"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
                     android:hint="@string/scientific_name">
 
                     <com.google.android.material.textfield.MaterialAutoCompleteTextView
                         android:id="@+id/etScientificName"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:minHeight="64dp"
+                        android:gravity="center_vertical"
                         android:inputType="textCapWords" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.App.TextInputLayout.NameInput"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginBottom="24dp"
                     android:hint="@string/common_name">
 
                     <com.google.android.material.textfield.MaterialAutoCompleteTextView
                         android:id="@+id/etCommonName"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:minHeight="64dp"
+                        android:gravity="center_vertical"
                         android:inputType="textCapWords" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Sex & Size -->
+                <!-- Row 1: Sex and Size -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginBottom="12dp"
                     android:orientation="horizontal">
 
                     <com.google.android.material.textfield.TextInputLayout
@@ -205,7 +177,7 @@
 
                 </LinearLayout>
 
-                <!-- Age (Optional) -->
+                <!-- Row 2: Age and Unit -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -247,20 +219,12 @@
 
                 </LinearLayout>
 
-                <!-- Pricing & Terms -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:text="@string/pricing_terms"
-                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                    android:textColor="?attr/colorPrimary" />
-
+                <!-- Pricing -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
+                    android:layout_marginBottom="24dp"
                     android:hint="@string/asking_price"
                     app:prefixText="R ">
 
@@ -272,20 +236,12 @@
 
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Additional Details -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:text="@string/additional_details"
-                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                    android:textColor="?attr/colorPrimary" />
-
+                <!-- Description -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="24dp"
+                    android:layout_marginBottom="32dp"
                     android:hint="@string/description"
                     app:counterEnabled="true"
                     app:counterMaxLength="150">
@@ -296,7 +252,7 @@
                         android:layout_height="wrap_content"
                         android:gravity="top"
                         android:inputType="textMultiLine"
-                        android:minLines="4" />
+                        android:minLines="3" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -305,10 +261,10 @@
                     android:id="@+id/btnCreateListing"
                     style="@style/Widget.Material3.Button"
                     android:layout_width="match_parent"
-                    android:layout_height="64dp"
+                    android:layout_height="60dp"
                     android:text="@string/publish_listing"
                     android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                    app:cornerRadius="16dp" />
+                    app:cornerRadius="18dp" />
 
                 <com.google.android.material.progressindicator.CircularProgressIndicator
                     android:id="@+id/progressBar"
@@ -325,11 +281,9 @@
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottomNavigation"
+            style="@style/Widget.App.BottomNavigationView"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
             android:layout_gravity="bottom"
-            app:labelVisibilityMode="unlabeled"
-            app:elevation="8dp"
             app:menu="@menu/bottom_nav_menu" />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>

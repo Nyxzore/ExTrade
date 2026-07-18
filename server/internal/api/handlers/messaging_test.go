@@ -23,7 +23,7 @@ func init() {
 func TestSendMessage_MissingFields(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.POST("/messaging/send_message.php", func(c *gin.Context) {
+	r.POST("/messaging/send_message", func(c *gin.Context) {
 		c.Set("userID", "test-user-uuid")
 		SendMessage(c)
 	})
@@ -34,7 +34,7 @@ func TestSendMessage_MissingFields(t *testing.T) {
 	form.Set("nonce", "")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/messaging/send_message.php", strings.NewReader(form.Encode()))
+	req, _ := http.NewRequest("POST", "/messaging/send_message", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	r.ServeHTTP(w, req)
 
@@ -57,7 +57,7 @@ func TestSendMessage_MissingFields(t *testing.T) {
 func TestSendMessage_Success(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.POST("/messaging/send_message.php", func(c *gin.Context) {
+	r.POST("/messaging/send_message", func(c *gin.Context) {
 		c.Set("userID", "test-user-uuid")
 		SendMessage(c)
 	})
@@ -89,7 +89,7 @@ func TestSendMessage_Success(t *testing.T) {
 	form.Set("nonce", "nonce-value")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/messaging/send_message.php", strings.NewReader(form.Encode()))
+	req, _ := http.NewRequest("POST", "/messaging/send_message", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	r.ServeHTTP(w, req)
 

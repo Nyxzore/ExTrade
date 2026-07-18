@@ -24,14 +24,14 @@ func init() {
 
 func TestAuthHandler_MissingLoginFields(t *testing.T) {
 	r := gin.New()
-	r.POST("/auth/auth.php", AuthHandler)
+	r.POST("/auth/auth", AuthHandler)
 
 	form := url.Values{}
 	form.Set("mode", "login")
 	form.Set("username", "")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/auth/auth.php", strings.NewReader(form.Encode()))
+	req, _ := http.NewRequest("POST", "/auth/auth", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	r.ServeHTTP(w, req)
 
@@ -50,7 +50,7 @@ func TestAuthHandler_MissingLoginFields(t *testing.T) {
 
 func TestAuthHandler_RegisterMissingEmail(t *testing.T) {
 	r := gin.New()
-	r.POST("/auth/auth.php", AuthHandler)
+	r.POST("/auth/auth", AuthHandler)
 
 	form := url.Values{}
 	form.Set("mode", "register")
@@ -58,7 +58,7 @@ func TestAuthHandler_RegisterMissingEmail(t *testing.T) {
 	form.Set("password", "password123")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/auth/auth.php", strings.NewReader(form.Encode()))
+	req, _ := http.NewRequest("POST", "/auth/auth", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	r.ServeHTTP(w, req)
 
@@ -69,7 +69,7 @@ func TestAuthHandler_RegisterMissingEmail(t *testing.T) {
 
 func TestAuthHandler_RegisterMissingE2EEKeys(t *testing.T) {
 	r := gin.New()
-	r.POST("/auth/auth.php", AuthHandler)
+	r.POST("/auth/auth", AuthHandler)
 
 	form := url.Values{}
 	form.Set("mode", "register")
@@ -78,7 +78,7 @@ func TestAuthHandler_RegisterMissingE2EEKeys(t *testing.T) {
 	form.Set("password", "password123")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/auth/auth.php", strings.NewReader(form.Encode()))
+	req, _ := http.NewRequest("POST", "/auth/auth", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	r.ServeHTTP(w, req)
 
@@ -89,7 +89,7 @@ func TestAuthHandler_RegisterMissingE2EEKeys(t *testing.T) {
 
 func TestAuthHandler_LoginBanned(t *testing.T) {
 	r := gin.New()
-	r.POST("/auth/auth.php", AuthHandler)
+	r.POST("/auth/auth", AuthHandler)
 
 	db.Pool.(*MockPool).QueryRowFunc = func(ctx context.Context, sql string, args ...any) pgx.Row {
 		return &MockRow{
@@ -109,7 +109,7 @@ func TestAuthHandler_LoginBanned(t *testing.T) {
 	form.Set("password", "password")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/auth/auth.php", strings.NewReader(form.Encode()))
+	req, _ := http.NewRequest("POST", "/auth/auth", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	r.ServeHTTP(w, req)
 
@@ -120,7 +120,7 @@ func TestAuthHandler_LoginBanned(t *testing.T) {
 
 func TestAuthHandler_LoginSuccess(t *testing.T) {
 	r := gin.New()
-	r.POST("/auth/auth.php", AuthHandler)
+	r.POST("/auth/auth", AuthHandler)
 
 	pepper := "testpepper"
 	os.Setenv("AUTH_PEPPER", pepper)
@@ -150,7 +150,7 @@ func TestAuthHandler_LoginSuccess(t *testing.T) {
 	form.Set("password", "password")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/auth/auth.php", strings.NewReader(form.Encode()))
+	req, _ := http.NewRequest("POST", "/auth/auth", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	r.ServeHTTP(w, req)
 

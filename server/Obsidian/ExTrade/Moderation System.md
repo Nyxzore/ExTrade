@@ -7,7 +7,7 @@ The Moderation System provides tools for community safety and administrative con
 ### Admin UI
 - **[[AdminActivity.kt]]**:
     - Restricted to users where `isAdmin()` returns true.
-    - Displays a feed of flagged content (Listings, Breeding, Users) fetched from `admin/get_flagged_items.php` (Legacy PHP - **Deprecated**).
+    - Displays a feed of flagged content (Listings, Breeding, Users) fetched from `admin/get_flagged_items` (Legacy PHP - **Deprecated**).
     - Uses `ReportAdapter` to list complaints with their targets and reasons.
 - **[[ReportAdapter.kt]]**:
     - Provides administrative actions:
@@ -19,7 +19,7 @@ The Moderation System provides tools for community safety and administrative con
 - **[[ReportDialog.kt]]**:
     - A shared UI component used across the app to flag content.
     - Allows users to select a reason (e.g., Scam, Illegal Species, Harassment).
-    - Submits the report to the Go backend with the target's ID and type via `core/report_item.php` (Legacy PHP - **Deprecated**).
+    - Submits the report to the Go backend with the target's ID and type via `core/report_item` (Legacy PHP - **Deprecated**).
 - **[[Report (Model)]]** (Shared):
     - Data class representing a moderation record.
 
@@ -38,5 +38,5 @@ The Moderation System provides tools for community safety and administrative con
 - **TC-MOD-03**: Verify that `Take Down` listing correctly removes it from public feeds while preserving it in the database for legal/audit purposes (status set to `moderated`).
 
 ### Safety
-- **TC-MOD-04**: Verify that non-admin users attempting to access `admin/get_flagged_items.php` (Legacy PHP) receive a `403 Forbidden` response.
+- **TC-MOD-04**: Verify that non-admin users attempting to access `admin/get_flagged_items` (Legacy PHP) receive a `403 Forbidden` response.
 

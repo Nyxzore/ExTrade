@@ -8,7 +8,7 @@ import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
+import com.example.exotrade.activities.BaseActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.exotrade.ExoTradeApplication
 import com.example.exotrade.R
@@ -31,7 +31,7 @@ import kotlinx.serialization.json.jsonPrimitive
  * Provides autocomplete for species names using [SpeciesRepository]
  * and handles image selection and compression before uploading to the server.
  */
-class CreateListing : AppCompatActivity() {
+class CreateListing : BaseActivity() {
 
     private lateinit var binding: ListingActivityCreateBinding
     private lateinit var session: SessionRepository
@@ -93,7 +93,26 @@ class CreateListing : AppCompatActivity() {
 
         NavigationHelper.setup(this, binding.bottomNavigation, R.id.nav_add)
 
+        binding.toolbar.setOnMenuItemClickListener { item ->
+            if (item.itemId == R.id.action_info) {
+                showInfoDialog()
+                true
+            } else false
+        }
+
         binding.btnCreateListing.setOnClickListener { createListing() }
+    }
+
+    private fun showInfoDialog() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Create Listing Help")
+            .setMessage("Fill in the details of the animal you wish to sell. \n\n" +
+                    "• Scientific Name: Required for categorization.\n" +
+                    "• Price: The amount in Rands.\n" +
+                    "• Description: Be specific about health, history, and temperament.\n" +
+                    "• Photos: High-quality photos increase buyer trust.")
+            .setPositiveButton("Got it", null)
+            .show()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

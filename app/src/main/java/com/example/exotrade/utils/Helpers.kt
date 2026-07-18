@@ -37,6 +37,7 @@ object Helpers {
     private var HOSTED_SERVER = "https://exotrade.co.za/"
 
     private var cachedNavProfileBitmap: Bitmap? = null
+    private var cachedNavProfileDrawable: Drawable? = null
     private var cachedNavProfileUrl: String? = null
     private var cachedNavProfileTier = -1
     private var lastBadgeUpdateTime: Long = 0
@@ -127,50 +128,60 @@ object Helpers {
 
     fun prepareBottomNav(nav: BottomNavigationView?) {
         if (nav == null) return
-        nav.itemIconTintList = ContextCompat.getColorStateList(nav.context, R.color.nav_item_tint)
+        nav.itemIconTintList = null 
         nav.itemTextColor = ContextCompat.getColorStateList(nav.context, R.color.nav_item_tint)
+        
+        // Initial tint for everything except profile
+        val tint = ContextCompat.getColorStateList(nav.context, R.color.nav_item_tint)
+        for (i in 0 until nav.menu.size()) {
+            val item = nav.menu.getItem(i)
+            if (item.itemId != R.id.nav_profile) {
+                item.icon?.mutate()?.setTintList(tint)
+            }
+        }
     }
 
     /**
      * Replaces the default profile navigation icon with the user's avatar.
+     * Ensures other icons stay tinted while the profile pic remains original.
      */
     fun updateNavProfileIcon(nav: BottomNavigationView?) {
         if (nav == null) return
+        
         val profileItem = nav.menu.findItem(R.id.nav_profile) ?: return
-
         val session = ExoTradeApplication.container.sessionRepository
         val profilePic = session.getProfilePic()
         val tier = session.getSubscriptionTier()
+        val tint = ContextCompat.getColorStateList(nav.context, R.color.nav_item_tint)
 
         if (profilePic.isNullOrEmpty() || "null".equals(profilePic, ignoreCase = true)) {
+            profileItem.icon?.mutate()?.setTintList(tint)
             return
         }
 
         val fullUrl = if (profilePic.startsWith("http")) profilePic else HOSTED_SERVER + profilePic
 
-        if (fullUrl == cachedNavProfileUrl && tier == cachedNavProfileTier && cachedNavProfileBitmap != null) {
-            profileItem.icon = BitmapDrawable(nav.resources, cachedNavProfileBitmap)
+        if (fullUrl == cachedNavProfileUrl && tier == cachedNavProfileTier && cachedNavProfileDrawable != null) {
+            profileItem.icon = cachedNavProfileDrawable
+            profileItem.icon?.mutate()?.setTintList(null)
             return
         }
 
         Glide.with(nav.context)
             .asBitmap()
             .load(fullUrl)
-            .placeholder(R.drawable.ic_person_24)
+            .diskCacheStrategy(DiskCacheStrategy.ALL)
             .into(object : CustomTarget<Bitmap>() {
                 override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
                     try {
-                        val borderSize = dpToPx(nav.context, 1)
                         val iconSizePx = dpToPx(nav.context, 24)
-                        val bitmapSize = iconSizePx + dpToPx(nav.context, 4)
-
-                        val borderedBitmap = Bitmap.createBitmap(bitmapSize, bitmapSize, Bitmap.Config.ARGB_8888)
+                        val borderedBitmap = Bitmap.createBitmap(iconSizePx, iconSizePx, Bitmap.Config.ARGB_8888)
                         val canvas = Canvas(borderedBitmap)
-
-                        val center = bitmapSize / 2f
+                        val center = iconSizePx / 2f
                         val radius = iconSizePx / 2f
 
                         if (tier >= 1) {
+                            val borderSize = dpToPx(nav.context, 1)
                             val paint = Paint(Paint.ANTI_ALIAS_FLAG)
                             paint.color = nav.context.getColor(R.color.tier_1_orange)
                             canvas.drawCircle(center, center, radius, paint)
@@ -179,17 +190,24 @@ object Helpers {
                             drawCircularBitmap(canvas, resource, center, center, radius)
                         }
 
+                        val finalIcon = BitmapDrawable(nav.resources, borderedBitmap)
                         cachedNavProfileBitmap = borderedBitmap
+                        cachedNavProfileDrawable = finalIcon
                         cachedNavProfileUrl = fullUrl
                         cachedNavProfileTier = tier
 
-                        nav.menu.findItem(R.id.nav_profile)?.icon = BitmapDrawable(nav.resources, borderedBitmap)
+                        nav.menu.findItem(R.id.nav_profile)?.apply {
+                            icon = finalIcon
+                            icon?.mutate()?.setTintList(null)
+                        }
                     } catch (e: Exception) {
                         Log.e("ExTrade", "Profile Icon Render Error", e)
                     }
                 }
 
-                override fun onLoadFailed(errorDrawable: Drawable?) {}
+                override fun onLoadFailed(errorDrawable: Drawable?) {
+                    profileItem.icon?.mutate()?.setTintList(tint)
+                }
                 override fun onLoadCleared(placeholder: Drawable?) {}
             })
     }

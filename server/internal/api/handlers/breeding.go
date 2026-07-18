@@ -401,7 +401,9 @@ func GetBreedingListingDetails(c *gin.Context) {
 	var (
 		listingID                                                       int
 		sellerID, speciesLSID, sellerName, sellerPublicKey              string
-		genus, species, subspecies, imageURL, breedingType, sex, status string
+		genus, species, subspecies                                      string
+		breedingType, sex, status                                       string
+		imageURL                                                        *string
 		distribution, desc, sizeInCm                                    *string
 		commonName, whatsapp, facebook, instagram                       *string
 		loanFee                                                         *float64
@@ -488,7 +490,8 @@ func GetMyBreedingStatus(c *gin.Context) {
 	for rows.Next() {
 		var (
 			id, matchCount                                     int
-			sex, status, breedingType, imageURL, speciesLSID   string
+			sex, status, breedingType, speciesLSID             string
+			imageURL                                           *string
 			genus, species                                     string
 			commonName                                         *string
 			listedTime                                         time.Time
@@ -564,7 +567,8 @@ func FindBreedingMatches(c *gin.Context) {
 		var (
 			id, subscriptionTier                                     int
 			sellerID, speciesLSID, sellerName                        string
-			genus, species, imageURL, breedingType, sex, status      string
+			genus, species, breedingType, sex, status                string
+			imageURL                                                 *string
 			desc, sizeInCm                                           *string
 			commonName, whatsapp, facebook, instagram                *string
 			loanFee                                                  *float64

@@ -100,6 +100,11 @@ class CreateAccount : AppCompatActivity() {
             return
         }
 
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            Toast.makeText(this, "Please enter a valid email address", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val params = mutableMapOf(
             "email" to email,
             "username" to username,

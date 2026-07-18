@@ -19,13 +19,13 @@ func init() {
 
 func TestGetFriends_HappyPath(t *testing.T) {
 	r := gin.New()
-	r.GET("/friends/get_friends.php", func(c *gin.Context) {
+	r.GET("/friends/get_friends", func(c *gin.Context) {
 		c.Set("userID", "test-user-uuid")
 		GetFriends(c)
 	})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/friends/get_friends.php", nil)
+	req, _ := http.NewRequest("GET", "/friends/get_friends", nil)
 	r.ServeHTTP(w, req)
 
 	// Since current project handlers directly use the global db.Pool (struct),
@@ -50,10 +50,10 @@ func TestGetFriends_HappyPath(t *testing.T) {
 func TestGetFriends_AuthFailure(t *testing.T) {
 	r := gin.New()
 	// Simulate middleware failing to set userID
-	r.GET("/friends/get_friends.php", GetFriends)
+	r.GET("/friends/get_friends", GetFriends)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/friends/get_friends.php", nil)
+	req, _ := http.NewRequest("GET", "/friends/get_friends", nil)
 	r.ServeHTTP(w, req)
 
 	// In current implementation, GetFriends proceeds with empty userID.
@@ -65,7 +65,7 @@ func TestGetFriends_AuthFailure(t *testing.T) {
 
 func TestGetFriends_EmptyList(t *testing.T) {
 	r := gin.New()
-	r.GET("/friends/get_friends.php", func(c *gin.Context) {
+	r.GET("/friends/get_friends", func(c *gin.Context) {
 		c.Set("userID", "user-with-no-friends")
 		GetFriends(c)
 	})
@@ -77,7 +77,7 @@ func TestGetFriends_EmptyList(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/friends/get_friends.php", nil)
+	req, _ := http.NewRequest("GET", "/friends/get_friends", nil)
 	r.ServeHTTP(w, req)
 
 	if w.Code != http.StatusOK {

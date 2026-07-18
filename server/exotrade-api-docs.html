@@ -168,7 +168,7 @@
 
     async function initGraph() {
         try {
-            const response = await fetch('get_graph_data.php');
+            const response = await fetch('get_graph_data');
             const data = await response.json();
 
             simulation = d3.forceSimulation(data.nodes)
@@ -222,7 +222,7 @@
         pane.classList.add("open");
 
         try {
-            const response = await fetch(`get_note_content.php?note=${encodeURIComponent(id)}`);
+            const response = await fetch(`get_note_content?note=${encodeURIComponent(id)}`);
             if (response.ok) {
                 const markdown = await response.text();
                 body.innerHTML = marked.parse(markdown);

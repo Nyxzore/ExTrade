@@ -6,7 +6,6 @@ import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
-import androidx.appcompat.app.AppCompatActivity
 import com.example.exotrade.R
 import com.example.exotrade.databinding.ActivityNoInternetBinding
 
@@ -14,7 +13,7 @@ import com.example.exotrade.databinding.ActivityNoInternetBinding
  * Activity displayed when the application detects a loss of internet connectivity.
  * It prevents the user from proceeding until a connection is restored.
  */
-class NoInternetActivity : AppCompatActivity() {
+class NoInternetActivity : BaseActivity() {
 
     private lateinit var binding: ActivityNoInternetBinding
 

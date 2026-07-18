@@ -8,10 +8,10 @@ import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.exotrade.ExoTradeApplication
 import com.example.exotrade.R
+import com.example.exotrade.activities.BaseActivity
 import com.example.exotrade.activities.profile.Profile
 import com.example.exotrade.databinding.BreedingActivityCreateBinding
 import com.example.exotrade.data.SessionRepository
@@ -25,7 +25,7 @@ import kotlinx.serialization.json.jsonPrimitive
 /**
  * Activity for creating a breeding-specific listing.
  */
-class CreateBreedingListing : AppCompatActivity() {
+class CreateBreedingListing : BaseActivity() {
 
     private lateinit var binding: BreedingActivityCreateBinding
     private lateinit var session: SessionRepository
@@ -84,9 +84,26 @@ class CreateBreedingListing : AppCompatActivity() {
 
         NavigationHelper.setup(this, binding.bottomNavigation, R.id.nav_add)
 
+        binding.toolbar.setOnMenuItemClickListener { item ->
+            if (item.itemId == R.id.action_info) {
+                showInfoDialog()
+                true
+            } else false
+        }
+
         loadSpeciesData()
 
         binding.btnCreateBreedingListing.setOnClickListener { createBreedingListing() }
+    }
+
+    private fun showInfoDialog() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Breeding Help")
+            .setMessage("List your animal for breeding services. \n\n" +
+                    "• Looking for Partner: You have an animal and need a mate.\n" +
+                    "• Willing to Loan: You are willing to loan your animal for a fee (Stud Fee).")
+            .setPositiveButton("Got it", null)
+            .show()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

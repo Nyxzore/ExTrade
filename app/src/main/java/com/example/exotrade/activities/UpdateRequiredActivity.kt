@@ -3,7 +3,6 @@ package com.example.exotrade.activities
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
-import androidx.appcompat.app.AppCompatActivity
 import com.example.exotrade.R
 import com.example.exotrade.databinding.ActivityUpdateRequiredBinding
 
@@ -11,7 +10,7 @@ import com.example.exotrade.databinding.ActivityUpdateRequiredBinding
  * Activity displayed when the application version is no longer supported by the server.
  * It prevents the user from proceeding until the app is updated.
  */
-class UpdateRequiredActivity : AppCompatActivity() {
+class UpdateRequiredActivity : BaseActivity() {
 
     private lateinit var binding: ActivityUpdateRequiredBinding
 

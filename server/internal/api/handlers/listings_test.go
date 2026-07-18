@@ -18,10 +18,10 @@ func init() {
 
 func TestGetAllListings_UnauthorizedWithoutUserID(t *testing.T) {
 	r := gin.New()
-	r.POST("/listings/get_all_listings.php", GetAllListings)
+	r.POST("/listings/get_all_listings", GetAllListings)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/listings/get_all_listings.php", nil)
+	req, _ := http.NewRequest("POST", "/listings/get_all_listings", nil)
 	r.ServeHTTP(w, req)
 
 	// Handler should not panic when userID is absent from context.
@@ -32,7 +32,7 @@ func TestGetAllListings_UnauthorizedWithoutUserID(t *testing.T) {
 
 func TestGetAllListings_FormParameters(t *testing.T) {
 	r := gin.New()
-	r.POST("/listings/get_all_listings.php", func(c *gin.Context) {
+	r.POST("/listings/get_all_listings", func(c *gin.Context) {
 		c.Set("userID", "test-user-uuid")
 		GetAllListings(c)
 	})
@@ -43,7 +43,7 @@ func TestGetAllListings_FormParameters(t *testing.T) {
 	form.Add("seed", "constant-seed")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/listings/get_all_listings.php", strings.NewReader(form.Encode()))
+	req, _ := http.NewRequest("POST", "/listings/get_all_listings", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	r.ServeHTTP(w, req)
 
@@ -55,13 +55,13 @@ func TestGetAllListings_FormParameters(t *testing.T) {
 
 func TestGetAllListings_DefaultOffsetAndSeed(t *testing.T) {
 	r := gin.New()
-	r.POST("/listings/get_all_listings.php", func(c *gin.Context) {
+	r.POST("/listings/get_all_listings", func(c *gin.Context) {
 		c.Set("userID", "test-user-uuid")
 		GetAllListings(c)
 	})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/listings/get_all_listings.php", strings.NewReader(""))
+	req, _ := http.NewRequest("POST", "/listings/get_all_listings", strings.NewReader(""))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	r.ServeHTTP(w, req)
 
@@ -72,10 +72,10 @@ func TestGetAllListings_DefaultOffsetAndSeed(t *testing.T) {
 
 func TestGetFriends_RequiresAuthenticatedUser(t *testing.T) {
 	r := gin.New()
-	r.GET("/friends/get_friends.php", GetFriends)
+	r.GET("/friends/get_friends", GetFriends)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/friends/get_friends.php", nil)
+	req, _ := http.NewRequest("GET", "/friends/get_friends", nil)
 	r.ServeHTTP(w, req)
 
 	// Without userID in context, handler still runs; should not panic.
@@ -86,13 +86,13 @@ func TestGetFriends_RequiresAuthenticatedUser(t *testing.T) {
 
 func TestGetFriends_WithUserContext(t *testing.T) {
 	r := gin.New()
-	r.GET("/friends/get_friends.php", func(c *gin.Context) {
+	r.GET("/friends/get_friends", func(c *gin.Context) {
 		c.Set("userID", "test-user-uuid")
 		GetFriends(c)
 	})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/friends/get_friends.php", nil)
+	req, _ := http.NewRequest("GET", "/friends/get_friends", nil)
 	r.ServeHTTP(w, req)
 
 	if w.Code == http.StatusOK {

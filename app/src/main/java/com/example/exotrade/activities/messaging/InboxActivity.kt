@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.util.Base64
 import android.view.View
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import com.example.exotrade.activities.BaseActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.exotrade.Adapters.ConversationAdapter
@@ -28,7 +28,7 @@ import kotlinx.serialization.json.int
  * Activity displaying the list of all active user conversations.
  * Summarizes the last message, unread status, and other participant's identity.
  */
-class InboxActivity : AppCompatActivity() {
+class InboxActivity : BaseActivity() {
 
     private lateinit var binding: MsgActivityInboxBinding
     private lateinit var session: SessionRepository

@@ -135,12 +135,12 @@
                 </LinearLayout>
 
                 <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnLogout"
+                    android:id="@+id/btnSettings"
                     style="@style/Widget.Material3.Button.IconButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    app:icon="@drawable/logout_24px"
-                    app:iconTint="?attr/colorError"
+                    app:icon="@drawable/ic_menu_24"
+                    app:iconTint="?attr/colorOnSurface"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
@@ -191,9 +191,8 @@
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottomNavigation"
+            style="@style/Widget.App.BottomNavigationView"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:labelVisibilityMode="unlabeled"
             app:layout_constraintBottom_toBottomOf="parent"
             app:menu="@menu/bottom_nav_menu" />
 

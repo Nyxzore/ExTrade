@@ -8,7 +8,7 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import com.example.exotrade.activities.BaseActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.exotrade.Adapters.FriendAdapter
@@ -28,7 +28,7 @@ import kotlinx.serialization.json.int
 /**
  * Activity for managing user friends, friend requests, and searching for new users.
  */
-class FriendsActivity : AppCompatActivity() {
+class FriendsActivity : BaseActivity() {
 
     private lateinit var binding: ProfileActivityFriendsBinding
     private lateinit var adapter: FriendAdapter

@@ -4,7 +4,7 @@ import android.os.Bundle
 import android.util.Base64
 import android.view.View
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import com.example.exotrade.activities.BaseActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.exotrade.Adapters.MessageAdapter
@@ -26,7 +26,7 @@ import kotlinx.serialization.json.int
  * Activity for an individual E2EE chat thread.
  * Handles real-time message polling, encryption, decryption, and optimistic UI updates.
  */
-class ChatActivity : AppCompatActivity(), MessageAdapter.OnUserClickListener {
+class ChatActivity : BaseActivity(), MessageAdapter.OnUserClickListener {
 
     private lateinit var binding: MsgActivityChatBinding
     private lateinit var session: SessionRepository

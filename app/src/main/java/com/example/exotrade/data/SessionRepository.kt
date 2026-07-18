@@ -1,9 +1,14 @@
 package com.example.exotrade.data
 
 import android.content.Context
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 class SessionRepository(context: Context) {
     private val prefs = context.getSharedPreferences("exotrade_prefs", Context.MODE_PRIVATE)
+
+    private val _logoutEvents = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val logoutEvents = _logoutEvents.asSharedFlow()
 
     fun isLoggedIn(): Boolean = prefs.getBoolean("is_logged_in", false)
     fun isRememberMe(): Boolean = prefs.getBoolean("remember_me", false)
@@ -54,5 +59,6 @@ class SessionRepository(context: Context) {
 
     fun clearSession() {
         prefs.edit().clear().apply()
+        _logoutEvents.tryEmit(Unit)
     }
 }

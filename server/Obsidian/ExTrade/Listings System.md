@@ -28,7 +28,7 @@ The listings system is the primary discovery engine for animal sales, integrated
 
 ## Data Flow
 1. `BrowseListings` requests data from `BrowseListingsViewModel`.
-2. `BrowseListingsViewModel` fetches JSON from `/listings/get_all_listings.php` using `ApiService`.
+2. `BrowseListingsViewModel` fetches JSON from `/listings/get_all_listings` using `ApiService`.
 3. The Go backend calculates exposure scores (See [[Backend]]) and returns a randomized list.
 4. `BrowseListingsViewModel` updates its `StateFlow`, which is observed by the Activity.
 5. `ListingAdapter` binds the models to the `RecyclerView`.

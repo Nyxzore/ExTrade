@@ -10,16 +10,16 @@ import com.example.exotrade.utils.EncryptionManager
  * Service locator for providing singletons.
  */
 class SharedContainer(context: Context) {
-    val apiService: ApiService by lazy {
-        ApiService()
-    }
-
     val sessionRepository: SessionRepository by lazy {
         SessionRepository(context)
     }
 
+    val apiService: ApiService by lazy {
+        ApiService(sessionRepository)
+    }
+
     val speciesRepository: SpeciesRepository by lazy {
-        SpeciesRepository(apiService, context)
+        SpeciesRepository(apiService, sessionRepository, context)
     }
 
     val encryptionManager: EncryptionManager by lazy {

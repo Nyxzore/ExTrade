@@ -20,7 +20,7 @@ The `:shared` module is designed for cross-platform support via Kotlin Multiplat
     - Configured with `ContentNegotiation` and `KotlinxSerialization` for JSON.
     - **Methods**: `getListings()`, `get<T>()`, `post<T>()`, `postForm<T>()`.
     - Handles base URL injection and common headers.
-    - *Note*: Some endpoints in `ApiService` (like `getListings`) call new API paths (e.g., `api/listings`), while others use the legacy `.php` paths for compatibility.
+    - *Note*: Some endpoints in `ApiService` (like `getListings`) call new API paths (e.g., `api/listings`), while others use the legacy Go paths for compatibility.
 
 - **[[EncryptionManager.kt]]**: Interface for End-to-End Encryption (E2EE) logic.
     - **Android Implementation**: `AndroidEncryptionManager.kt` (using **LazySodium**).

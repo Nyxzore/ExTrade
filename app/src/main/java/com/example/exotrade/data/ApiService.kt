@@ -12,7 +12,7 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
-class ApiService {
+class ApiService(private val sessionRepository: SessionRepository) {
     val client = HttpClient(OkHttp) {
         install(ContentNegotiation) {
             json(Json {
@@ -21,8 +21,20 @@ class ApiService {
                 isLenient = true
             })
         }
+        install(HttpTimeout) {
+            requestTimeoutMillis = 15000
+            connectTimeoutMillis = 15000
+        }
         defaultRequest {
             url(Helpers.getBaseUrl())
+        }
+        expectSuccess = true
+        HttpResponseValidator {
+            handleResponseExceptionWithRequest { exception, _ ->
+                if (exception is ClientRequestException && exception.response.status == HttpStatusCode.Unauthorized) {
+                    sessionRepository.clearSession()
+                }
+            }
         }
     }
 

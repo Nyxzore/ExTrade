@@ -111,7 +111,7 @@ TRUNCATE TABLE spiders_import;
 TRUNCATE TABLE spiders RESTART IDENTITY;
 
 INSERT INTO spiders (
-    "speciesId",
+    "species_id",
     "species_legacy_id",
     "species_lsid",
     "family",
@@ -122,8 +122,8 @@ INSERT INTO spiders (
     "year",
     "parentheses",
     "distribution",
-    "validSpeciesId",
-    "taxonStatus"
+    "valid_species_id",
+    "taxon_status"
 )
 SELECT DISTINCT ON ("species_lsid")
     "speciesId",
@@ -146,7 +146,9 @@ ORDER BY "species_lsid", "speciesId";
 TRUNCATE TABLE taxa;
 
 INSERT INTO taxa (
+    id,
     species_lsid,
+    family,
     genus,
     species,
     subspecies,
@@ -156,7 +158,9 @@ INSERT INTO taxa (
     common_name
 )
 SELECT
+    s."species_id",
     s."species_lsid",
+    s."family",
     s."genus",
     s."species",
     s."subspecies",
@@ -168,7 +172,7 @@ FROM spiders s
 LEFT JOIN common_names c
 ON s."species_lsid" = c.species_lsid
 WHERE "family" = 'Theraphosidae'
-AND "taxonStatus" = 'VALID';
+AND s."taxon_status" = 'VALID';
 
 COMMIT;
 EOF

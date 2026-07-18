@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
+    <!-- Minimalist Palette -->
     <color name="white">#FFFFFFFF</color>
+    <color name="black">#FF000000</color>
+
+    <!-- Pastel Orange Accent -->
+    <color name="accent_orange">#FFB347</color>
+    <color name="accent_orange_dark">#E69500</color>
+    <color name="accent_orange_container">#FFF3E0</color>
+    <color name="accent_orange_container_dark">#E65100</color>
+
     <color name="tier_1_orange">#FFF57C00</color>
     <color name="orange_primary">#FFF57C00</color>
     <color name="orange_primary_dark">#FFE64A19</color>

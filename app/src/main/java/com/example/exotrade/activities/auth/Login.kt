@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.example.exotrade.activities.BaseActivity
 import com.example.exotrade.activities.listings.BrowseListings
 import com.example.exotrade.databinding.AuthActivityLoginBinding
 import com.example.exotrade.viewmodels.LoginViewModel
@@ -19,7 +20,7 @@ import kotlinx.coroutines.launch
  * Handles persistent login and manages the recovery
  * of E2EE identity keys using the user's password.
  */
-class Login : AppCompatActivity() {
+class Login : BaseActivity() {
 
     private lateinit var binding: AuthActivityLoginBinding
     private val viewModel: LoginViewModel by viewModels { ViewModelFactory() }

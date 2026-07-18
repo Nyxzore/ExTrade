@@ -35,7 +35,11 @@ func AppVersionCheck() gin.HandlerFunc {
 
 func AuthRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID := c.DefaultPostForm("user_id", c.Query("user_id"))
+		userID := c.DefaultPostForm("user_id", c.DefaultPostForm("uuid", c.Query("user_id")))
+		if userID == "" {
+			userID = c.Query("uuid")
+		}
+
 		token := c.DefaultPostForm("auth_token", c.Query("auth_token"))
 
 		if userID == "" || token == "" {

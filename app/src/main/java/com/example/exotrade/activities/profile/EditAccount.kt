@@ -14,11 +14,11 @@ import android.widget.Toast
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.exotrade.ExoTradeApplication
 import com.example.exotrade.R
+import com.example.exotrade.activities.BaseActivity
 import com.example.exotrade.databinding.ProfileActivityEditBinding
 import com.example.exotrade.data.SessionRepository
 import com.example.exotrade.utils.*
@@ -39,7 +39,7 @@ import kotlinx.serialization.json.jsonPrimitive
  * Activity for editing user account details, including profile picture,
  * contact information, and security settings.
  */
-class EditAccount : AppCompatActivity() {
+class EditAccount : BaseActivity() {
 
     private enum class SocialPlatform { WHATSAPP, FACEBOOK, INSTAGRAM }
 
@@ -123,6 +123,7 @@ class EditAccount : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val response: String = ExoTradeApplication.container.apiService.postForm("profile/get_profile", session.authParams())
+                android.util.Log.d("ExoTrade", "Raw EditAccount Response: $response")
                 binding.progressBar.visibility = View.GONE
                 
                 val json = Json.parseToJsonElement(response).jsonObject
@@ -136,10 +137,13 @@ class EditAccount : AppCompatActivity() {
                     refreshSocialButtons()
                     val picPath = json["profile_picture"]?.jsonPrimitive?.content
                     Helpers.loadImage(picPath, binding.imgProfile, R.drawable.ic_person_24)
+                } else {
+                    val msg = json["message"]?.jsonPrimitive?.content ?: "Unknown error"
+                    Toast.makeText(this@EditAccount, "Error: $msg", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                binding.progressBar.visibility = View.GONE
-                Toast.makeText(this@EditAccount, R.string.error_loading_profile, Toast.LENGTH_SHORT).show()
+                android.util.Log.e("ExoTrade", "EditAccount load error", e)
+                Toast.makeText(this@EditAccount, "Error loading profile: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -330,7 +334,7 @@ class EditAccount : AppCompatActivity() {
 
     private fun updateProfile() {
         val username = binding.etUsername.text.toString().trim()
-        val email = binding.etEmail.text.toString().trim()
+        val email = binding.etEmail.text.toString().trim().lowercase()
         val newPassword = binding.etNewPassword.text.toString().trim()
 
         val whatsapp = SocialLinkUtils.normalizeWhatsApp(binding.etWhatsApp.text.toString().trim())

@@ -102,8 +102,9 @@ func GetAllListings(c *gin.Context) {
 	for rows.Next() {
 		var (
 			id, subscriptionTier                                        int
-			sellerID, sellerName, scientificName, description           string
-			imageURL, sex, status                                       string
+			sellerID, sellerName, scientificName                        string
+			description, imageURL                                       *string
+			sex, status                                                 string
 			commonName, whatsapp, facebook, instagram                   *string
 			price                                                       *float64
 			listedTime                                                  time.Time
@@ -310,8 +311,9 @@ func GetListingDetails(c *gin.Context) {
 
 	var (
 		id, subscriptionTier                               int
-		sellerID, speciesLSID, sellerName, desc            string
-		imageURL, sex, status, genus, species              string
+		sellerID, speciesLSID, sellerName                  string
+		desc, imageURL                                     *string
+		sex, status, genus, species                        string
 		whatsapp, facebook, instagram, commonName          *string
 		price                                              *float64
 		listedTime                                         time.Time
@@ -362,13 +364,12 @@ func GetListingDetails(c *gin.Context) {
 
 func GetAllSpecies(c *gin.Context) {
 	query := `
-        SELECT s.speciesId as id,
-               TRIM(CONCAT_WS(' ', t.genus, t.species, t.subspecies)) as scientificName,
-               t.common_name as commonName,
-               s.family,
-               t.species_lsid as speciesLsid
-        FROM taxa t
-        JOIN spiders s ON t.species_lsid = s.species_lsid`
+        SELECT id,
+               TRIM(CONCAT_WS(' ', genus, species, subspecies)) as scientificName,
+               common_name as commonName,
+               family,
+               species_lsid as speciesLsid
+        FROM taxa`
 
 	rows, err := db.Pool.Query(context.Background(), query)
 	if err != nil {

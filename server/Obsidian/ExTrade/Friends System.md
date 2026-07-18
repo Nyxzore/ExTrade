@@ -22,8 +22,8 @@ The Friends System manages the user's social graph, utilizing trigram similarity
 ## Flow & API
 1. **Search**: `FriendsActivity` calls `friends/search_users`.
 2. **Request**: Clicking "Add Friend" triggers `friends/send_friend_request`.
-3. **Observation**: Pending requests are fetched via `friends/get_friend_requests.php` (Legacy PHP - **Deprecated**) and displayed in the "Requests" tab of `FriendsActivity`.
-4. **Acceptance**: Clicking "Accept" triggers `friends/accept_friend_request.php` (Legacy PHP - **Deprecated**), which updates the local list and moves the user to the "Friends" tab.
+3. **Observation**: Pending requests are fetched via `friends/get_friend_requests` (Legacy PHP - **Deprecated**) and displayed in the "Requests" tab of `FriendsActivity`.
+4. **Acceptance**: Clicking "Accept" triggers `friends/accept_friend_request` (Legacy PHP - **Deprecated**), which updates the local list and moves the user to the "Friends" tab.
 
 ## Database Integration
 - **`friendships` Table**: Stores the UUID pairs and status.

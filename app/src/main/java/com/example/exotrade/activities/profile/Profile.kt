@@ -5,19 +5,19 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.exotrade.Adapters.ListingAdapter
-import com.example.exotrade.models.Listing
 import com.example.exotrade.ExoTradeApplication
 import com.example.exotrade.R
+import com.example.exotrade.activities.BaseActivity
 import com.example.exotrade.activities.auth.Login
 import com.example.exotrade.activities.listings.EditListing
 import com.example.exotrade.activities.listings.ListingDetails
 import com.example.exotrade.databinding.ProfileActivityMainBinding
+import com.example.exotrade.models.Listing
 import com.example.exotrade.utils.Helpers
 import com.example.exotrade.utils.NavigationHelper
 import com.example.exotrade.data.SessionRepository
@@ -35,7 +35,7 @@ import kotlinx.serialization.json.int
  * Activity for displaying a user's profile, including their bio, social links, and listings.
  * Can be used to view the current user's own profile or another user's profile.
  */
-class Profile : AppCompatActivity() {
+class Profile : BaseActivity() {
     private lateinit var binding: ProfileActivityMainBinding
     private lateinit var session: SessionRepository
     private var viewUserId: String? = null
@@ -59,7 +59,7 @@ class Profile : AppCompatActivity() {
 
         val isSelf = viewUserId == session.getUserUUID()
         binding.btnEditProfile.visibility = if (isSelf) View.VISIBLE else View.GONE
-        binding.btnLogout.visibility = if (isSelf) View.VISIBLE else View.GONE
+        binding.btnSettings.visibility = if (isSelf) View.VISIBLE else View.GONE
         binding.btnAddFriend.visibility = if (isSelf) View.GONE else View.VISIBLE
         binding.btnFriends.visibility = if (isSelf) View.VISIBLE else View.GONE
         binding.btnReportUser.visibility = if (isSelf) View.GONE else View.VISIBLE
@@ -82,12 +82,8 @@ class Profile : AppCompatActivity() {
             com.example.exotrade.utils.ReportDialog.show(this, "user", viewUserId ?: "", null)
         }
 
-        binding.btnLogout.setOnClickListener {
-            session.clearSession()
-            val intent = Intent(this, Login::class.java)
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
-            startActivity(intent)
-            finish()
+        binding.btnSettings.setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
         }
 
         binding.btnEditProfile.setOnClickListener {
@@ -121,6 +117,8 @@ class Profile : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val response: String = ExoTradeApplication.container.apiService.postForm("profile/get_profile", params)
+                android.util.Log.d("ExoTrade", "Raw Profile Response: $response")
+                
                 val json = Json.parseToJsonElement(response).jsonObject
                 if ("success" == json["status"]?.jsonPrimitive?.content) {
                     val username = json["username"]?.jsonPrimitive?.content ?: ""
@@ -129,7 +127,10 @@ class Profile : AppCompatActivity() {
                     val picPath = json["profile_picture"]?.jsonPrimitive?.content
                     Helpers.loadImage(picPath, binding.imgProfilePicture, R.drawable.ic_person_24)
 
-                    val tier = json["subscription_tier"]?.jsonPrimitive?.int ?: 0
+                    val tierElement = json["subscription_tier"]
+                    val tier = if (tierElement != null && tierElement !is kotlinx.serialization.json.JsonNull) {
+                        tierElement.jsonPrimitive.int
+                    } else 0
 
                     if (viewUserId == session.getUserUUID()) {
                         session.updateUserInfo(
@@ -188,10 +189,12 @@ class Profile : AppCompatActivity() {
                     }
                     filterAndDisplayListings()
                 } else {
-                    Toast.makeText(this@Profile, "Error: ${json["message"]?.jsonPrimitive?.content}", Toast.LENGTH_SHORT).show()
+                    val msg = json["message"]?.jsonPrimitive?.content ?: "Unknown error"
+                    Toast.makeText(this@Profile, "Error: $msg", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(this@Profile, "Failed to load profile data", Toast.LENGTH_SHORT).show()
+                android.util.Log.e("ExoTrade", "Profile fetch error", e)
+                Toast.makeText(this@Profile, "Failed to load profile data: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }

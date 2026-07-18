@@ -5,6 +5,7 @@ import (
 	"exotrade-server/internal/db"
 	"exotrade-server/pkg/utils"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -18,11 +19,14 @@ func GetProfile(c *gin.Context) {
 	authenticatedUserID, _ := c.Get("userID")
 	targetUserID := c.DefaultPostForm("target_user_id", authenticatedUserID.(string))
 
+	log.Printf("DEBUG: GetProfile - authenticatedUserID: %s, targetUserID: %s", authenticatedUserID, targetUserID)
+
 	var (
-		username, email, profilePicture, publicKey string
-		subscriptionTier                            int
-		isAdmin                                     bool
-		whatsapp, facebook, instagram               *string
+		username                                      string
+		email, profilePicture, publicKey              *string
+		subscriptionTier                              *int
+		isAdmin                                       *bool
+		whatsapp, facebook, instagram                 *string
 	)
 
 	query := "SELECT username, email, profile_picture, public_key, subscription_tier, is_admin, whatsapp, facebook, instagram FROM users WHERE id = $1"
@@ -31,18 +35,20 @@ func GetProfile(c *gin.Context) {
 	)
 
 	if err != nil {
+		log.Printf("DEBUG: GetProfile failed to find user %s: %v", targetUserID, err)
 		utils.SendError(c, http.StatusNotFound, "User not found", nil)
 		return
 	}
 
 	// Email is private unless it's your own profile
 	displayEmail := ""
-	if targetUserID == authenticatedUserID {
-		displayEmail = email
+	if targetUserID == authenticatedUserID && email != nil {
+		displayEmail = *email
 	}
 
 	// Fetch both sale and breeding listings
-	listingsQuery := `
+	listingsQuery :=
+`
     (SELECT l.id, l.seller_id, t.species_lsid,
             TRIM(CONCAT_WS(' ', t.genus, t.species, t.subspecies)) as scientific_name,
             t.common_name, l.price as raw_price, l.description, l.image_url,
@@ -67,12 +73,15 @@ func GetProfile(c *gin.Context) {
 	rows, err := db.Pool.Query(context.Background(), listingsQuery, targetUserID)
 	listings := []map[string]any{}
 
-	if err == nil {
+	if err != nil {
+		log.Printf("DEBUG: GetProfile listings query error for %s: %v", targetUserID, err)
+	} else {
 		defer rows.Close()
 		for rows.Next() {
 			var (
 				id                                                                 int
-				sellerID, speciesLSID, scientificName, description, imageURL       string
+				sellerID, speciesLSID, scientificName                              string
+				description, imageURL                                              *string
 				kind, sex, status                                                  string
 				breedingType                                                       *string
 				commonName                                                         *string
@@ -143,20 +152,24 @@ func UpdateProfile(c *gin.Context) {
 	userID, _ := c.Get("userID")
 
 	username := c.PostForm("username")
-	email := c.PostForm("email")
+	email := strings.ToLower(strings.TrimSpace(c.PostForm("email")))
 	profilePictureData := c.PostForm("profile_picture_data")
 	newPassword := c.PostForm("new_password")
 	whatsapp := c.PostForm("whatsapp")
 	facebook := c.PostForm("facebook")
 	instagram := c.PostForm("instagram")
 
+	log.Printf("DEBUG: UpdateProfile - userID: %s, username: %s, email: %s", userID, username, email)
+
 	if username == "" || email == "" {
+		log.Printf("DEBUG: UpdateProfile failed - missing username or email")
 		utils.SendError(c, http.StatusBadRequest, "Username and email are required", nil)
 		return
 	}
 
 	// Basic email validation
 	if !utils.IsValidEmail(email) {
+		log.Printf("DEBUG: UpdateProfile failed - invalid email format: %s", email)
 		utils.SendError(c, http.StatusBadRequest, "Invalid email format", nil)
 		return
 	}

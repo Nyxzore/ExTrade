@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.exotrade.Adapters.FriendAdapter
@@ -14,6 +13,7 @@ import com.example.exotrade.ExoTradeApplication
 import com.example.exotrade.models.Report
 import com.example.exotrade.models.User
 import com.example.exotrade.R
+import com.example.exotrade.activities.BaseActivity
 import com.example.exotrade.activities.breeding.BreedingListingDetails
 import com.example.exotrade.activities.listings.ListingDetails
 import com.example.exotrade.activities.profile.Profile
@@ -31,7 +31,7 @@ import kotlinx.serialization.json.int
 /**
  * Main dashboard for administrative tasks.
  */
-class AdminActivity : AppCompatActivity() {
+class AdminActivity : BaseActivity() {
 
     private lateinit var binding: AdminActivityUsersBinding
     private lateinit var searchAdapter: FriendAdapter

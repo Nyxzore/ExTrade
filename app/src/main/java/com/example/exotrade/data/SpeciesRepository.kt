@@ -8,7 +8,11 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.decodeFromJsonElement
 import java.io.File
 
-class SpeciesRepository(private val apiService: ApiService, private val context: Context) {
+class SpeciesRepository(
+    private val apiService: ApiService,
+    private val sessionRepository: SessionRepository,
+    private val context: Context
+) {
     private var speciesCache: List<Species> = emptyList()
     private val cacheFile = File(context.filesDir, "species_cache.json")
     private val json = Json { ignoreUnknownKeys = true }
@@ -29,10 +33,11 @@ class SpeciesRepository(private val apiService: ApiService, private val context:
     }
 
     suspend fun syncFromServer(force: Boolean = false) {
+        if (!sessionRepository.isLoggedIn()) return
         if (!force && speciesCache.isNotEmpty()) return
         
         try {
-            val response: String = apiService.get("listings/get_all_species")
+            val response: String = apiService.get("listings/get_all_species", sessionRepository.authParams())
             val root = Json.parseToJsonElement(response).jsonObject
             if (root["status"]?.toString()?.contains("success") == true) {
                 val data = root["species"]?.jsonArray ?: return

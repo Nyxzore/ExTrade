@@ -2,12 +2,29 @@ package utils
 
 import (
 	"fmt"
+	"net"
 	"regexp"
+	"strings"
 )
 
 func IsValidEmail(email string) bool {
-	re := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
+	re := regexp.MustCompile(`(?i)^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,24}$`)
 	return re.MatchString(email)
+}
+
+func VerifyEmailDomain(email string) (bool, error) {
+	parts := strings.Split(email, "@")
+	if len(parts) != 2 {
+		return false, fmt.Errorf("invalid email format")
+	}
+	domain := parts[1]
+
+	mx, err := net.LookupMX(domain)
+	if err != nil {
+		return false, err
+	}
+
+	return len(mx) > 0, nil
 }
 
 func FormatAge(days *int) string {

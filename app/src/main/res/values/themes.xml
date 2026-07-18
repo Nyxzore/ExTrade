@@ -2,10 +2,27 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.Exotrade" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/accent_orange</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/accent_orange_container</item>
+        <item name="colorSecondary">@color/accent_orange</item>
+        <item name="android:windowBackground">@color/white</item>
+        <item name="colorSurface">@color/white</item>
+        <item name="colorOnSurface">@color/black</item>
     </style>
 
     <style name="Theme.Exotrade" parent="Base.Theme.Exotrade" />
+
+    <style name="Widget.App.BottomNavigationView" parent="Widget.Material3.BottomNavigationView">
+        <item name="android:layout_height">64dp</item>
+        <item name="labelVisibilityMode">unlabeled</item>
+        <item name="elevation">0dp</item>
+        <item name="background">?android:attr/windowBackground</item>
+    </style>
+
+    <style name="Widget.App.TextInputLayout.NameInput" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="android:layout_marginBottom">16dp</item>
+    </style>
 
     <style name="Circle">
         <item name="cornerFamily">rounded</item>

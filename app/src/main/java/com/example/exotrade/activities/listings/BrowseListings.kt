@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.exotrade.Adapters.ListingAdapter
 import com.example.exotrade.ExoTradeApplication
 import com.example.exotrade.R
+import com.example.exotrade.activities.BaseActivity
 import com.example.exotrade.activities.breeding.BreedingFeed
 import com.example.exotrade.activities.profile.Profile
 import com.example.exotrade.data.SessionRepository
@@ -34,7 +35,7 @@ import kotlinx.coroutines.launch
  * Main marketplace feed activity.
  * Displays a searchable, filterable, and paginated list of animal listings.
  */
-class BrowseListings : AppCompatActivity() {
+class BrowseListings : BaseActivity() {
     private lateinit var binding: ListingActivityBrowseBinding
     private val session: SessionRepository = ExoTradeApplication.container.sessionRepository
     private lateinit var adapter: ListingAdapter
