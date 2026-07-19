@@ -70,8 +70,15 @@ object ShareUtils {
                     whatsapp, facebook, instagram
                 )
 
-                lblCommonName.text = commonName
-                lblScientificName.text = scientificName
+                val isNoCommon = commonName == Helpers.NO_COMMON_NAME_PLACEHOLDER || commonName.isNullOrEmpty()
+                lblCommonName.text = if (isNoCommon) scientificName else commonName
+                if (isNoCommon) {
+                    lblScientificName.visibility = View.GONE
+                } else {
+                    lblScientificName.visibility = View.VISIBLE
+                    lblScientificName.text = scientificName
+                }
+                
                 lblPrice.text = priceText
                 lblDescription.text = description
                 lblSoldBadge.visibility = if (isSold) View.VISIBLE else View.GONE
@@ -80,9 +87,10 @@ object ShareUtils {
                 // Load image synchronously
                 if (!imageUrl.isNullOrEmpty() && "null" != imageUrl) {
                     try {
+                        val fullUrl = if (imageUrl.startsWith("http")) imageUrl else Helpers.getBaseUrl() + imageUrl
                         val coverBitmap = Glide.with(activity)
                             .asBitmap()
-                            .load(Helpers.getBaseUrl() + imageUrl)
+                            .load(fullUrl)
                             .submit(1080, 1080)
                             .get()
                         

@@ -23,6 +23,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
+
 /**
  * Activity for modifying an existing animal listing.
  * Pre-populates fields with current listing data and allows updating metadata or photos.
@@ -44,6 +45,10 @@ class EditListing : BaseActivity() {
             binding.imgPreview.setImageURI(it)
             selectedImageUri = it
             binding.imgPreview.alpha = 1.0f
+
+            // Update preview card
+            val previewBinding = binding.previewCard
+            previewBinding.imgCoverImage.setImageURI(it)
         }
     }
 
@@ -87,6 +92,47 @@ class EditListing : BaseActivity() {
             binding.etSex.setText(savedInstanceState.getString("sex_value", "Unsexed"), false)
             binding.etAgeUnit.setText(savedInstanceState.getString("age_unit_value", getString(R.string.months)), false)
         }
+        setupPreviewLogic()
+    }
+
+    private fun setupPreviewLogic() {
+        val previewBinding = binding.previewCard
+
+        fun updatePreview() {
+            val scientific = binding.etScientificName.text.toString()
+            val common = binding.etCommonName.text.toString()
+            val price = binding.etPrice.text.toString()
+            val desc = binding.etDescription.text.toString()
+
+            val isNoCommon = common == Helpers.NO_COMMON_NAME_PLACEHOLDER || common.isEmpty()
+            previewBinding.lblCommonName.text = if (isNoCommon) scientific.ifEmpty { "Species Name" } else common
+
+            if (isNoCommon) {
+                previewBinding.lblScientificName.visibility = View.GONE
+            } else {
+                previewBinding.lblScientificName.visibility = View.VISIBLE
+                previewBinding.lblScientificName.text = scientific.ifEmpty { "Scientific Name" }
+            }
+
+            previewBinding.lblPrice.text = if (price.isEmpty()) "R 0.00" else "R $price"
+            previewBinding.lblDescription.text = desc.ifEmpty { "Description goes here..." }
+        }
+
+        val watcher = object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                updatePreview()
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        }
+
+        binding.etScientificName.addTextChangedListener(watcher)
+        binding.etCommonName.addTextChangedListener(watcher)
+        binding.etPrice.addTextChangedListener(watcher)
+        binding.etDescription.addTextChangedListener(watcher)
+
+        // Initial update
+        updatePreview()
     }
 
     private fun loadSpeciesData() {
@@ -128,7 +174,7 @@ class EditListing : BaseActivity() {
                     if (!common.isNullOrEmpty()) {
                         binding.etCommonName.setText(common, false)
                     } else {
-                        binding.etCommonName.setText("None (Uses Scientific Name)", false)
+                        binding.etCommonName.setText(Helpers.NO_COMMON_NAME_PLACEHOLDER, false)
                     }
                 }
             }
@@ -147,7 +193,9 @@ class EditListing : BaseActivity() {
                 
                 val json = Json.parseToJsonElement(response).jsonObject
                 if ("success" == json["status"]?.jsonPrimitive?.content) {
-                    binding.etCommonName.setText(json["common_name"]?.jsonPrimitive?.content ?: "", false)
+                    val commonName = json["common_name"]?.jsonPrimitive?.content ?: ""
+                    val displayCommon = if (commonName.isEmpty()) Helpers.NO_COMMON_NAME_PLACEHOLDER else commonName
+                    binding.etCommonName.setText(displayCommon, false)
                     binding.etScientificName.setText(json["scientific_name"]?.jsonPrimitive?.content ?: "", false)
                     binding.etPrice.setText(json["price_raw"]?.jsonPrimitive?.content ?: "")
                     binding.etDescription.setText(json["description"]?.jsonPrimitive?.content ?: "")
@@ -183,7 +231,14 @@ class EditListing : BaseActivity() {
                     if (imgUrl.isNotEmpty() && "null" != imgUrl) {
                         Helpers.loadImage(imgUrl, binding.imgPreview)
                         binding.imgPreview.alpha = 1.0f
+
+                        // Update preview card image
+                        val previewBinding = binding.previewCard
+                        Helpers.loadImage(imgUrl, previewBinding.imgCoverImage)
                     }
+
+                    // Force update text preview
+                    setupPreviewLogic()
                 } else {
                     Toast.makeText(this@EditListing, json["message"]?.jsonPrimitive?.content, Toast.LENGTH_SHORT).show()
                 }

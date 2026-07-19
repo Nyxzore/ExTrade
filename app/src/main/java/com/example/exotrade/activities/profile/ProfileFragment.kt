@@ -174,7 +174,10 @@ class ProfileFragment : Fragment() {
                                 listingType = l["kind"]?.jsonPrimitive?.content,
                                 sex = l["sex"]?.jsonPrimitive?.content,
                                 status = l["status"]?.jsonPrimitive?.content,
-                                subscriptionTier = l["subscription_tier"]?.jsonPrimitive?.int ?: 0
+                                subscriptionTier = l["subscription_tier"]?.jsonPrimitive?.int ?: 0,
+                                whatsapp = l["whatsapp"]?.jsonPrimitive?.content,
+                                facebook = l["facebook"]?.jsonPrimitive?.content,
+                                instagram = l["instagram"]?.jsonPrimitive?.content
                             )
                         )
                     }

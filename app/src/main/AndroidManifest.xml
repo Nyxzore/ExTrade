@@ -32,6 +32,14 @@
                 <data android:pathPrefix="/listing/" />
                 <data android:pathPrefix="/breeding/" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="exotrade" />
+                <data android:host="listing" />
+                <data android:host="breeding" />
+            </intent-filter>
         </activity>
         <activity android:name=".activities.NoInternetActivity" />
         <activity android:name=".activities.UpdateRequiredActivity" />
@@ -71,6 +79,16 @@
         <activity android:name=".activities.profile.FriendsActivity" />
         <activity android:name=".activities.profile.Profile" />
         <activity android:name=".activities.profile.SettingsActivity" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.example.exotrade.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
     </application>
 

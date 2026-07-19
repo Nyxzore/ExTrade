@@ -217,3 +217,203 @@ button:active { transform: scale(0.98); }
     object-fit: cover;
     border: 3px solid var(--brand-orange);
 }
+
+/* Modals */
+#modal-container {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
+#modal-content {
+    background: var(--surface);
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    border-radius: 24px;
+    padding: 2.5rem;
+    overflow-y: auto;
+    position: relative;
+    border: 1px solid var(--surface-light);
+}
+
+.modal-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 2rem;
+    cursor: pointer;
+    width: auto;
+    padding: 0;
+}
+
+/* Inbox */
+.inbox-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.conversation-item {
+    background: var(--surface);
+    padding: 1.5rem;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    border: 1px solid var(--surface-light);
+}
+
+.conversation-item:hover { background: var(--surface-light); }
+.conversation-item.unread { border-left: 4px solid var(--brand-orange); }
+
+.conv-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #333;
+}
+
+.conv-info { flex: 1; }
+.conv-meta { display: flex; justify-content: space-between; margin-bottom: 0.25rem; }
+.conv-last-msg { color: var(--text-muted); font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 400px; }
+
+/* Chat */
+.chat-container {
+    height: calc(100vh - 200px);
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border-radius: 24px;
+    overflow: hidden;
+    border: 1px solid var(--surface-light);
+}
+
+.chat-header {
+    padding: 1rem 2rem;
+    background: var(--surface-light);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+#chat-messages {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.message {
+    max-width: 70%;
+    padding: 1rem 1.5rem;
+    border-radius: 18px;
+    position: relative;
+}
+
+.message.sent {
+    align-self: flex-end;
+    background: var(--brand-orange);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.message.received {
+    align-self: flex-start;
+    background: var(--surface-light);
+    border-bottom-left-radius: 4px;
+}
+
+.message-time {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    margin-top: 0.5rem;
+    display: block;
+}
+
+.chat-input-area {
+    padding: 1.5rem 2rem;
+    display: flex;
+    gap: 1rem;
+    background: var(--surface-light);
+}
+
+.chat-input-area input { flex: 1; }
+.chat-input-area button { width: auto; padding: 0 2rem; }
+
+/* FAB */
+.fab {
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--brand-orange);
+    color: white;
+    font-size: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+    cursor: pointer;
+    border: none;
+}
+
+/* Forms */
+textarea {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background: var(--bg-dark);
+    border: 1px solid var(--surface-light);
+    border-radius: 8px;
+    color: white;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 100px;
+}
+
+select {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background: var(--bg-dark);
+    border: 1px solid var(--surface-light);
+    border-radius: 8px;
+    color: white;
+    font-family: inherit;
+}
+
+.form-row { display: flex; gap: 1rem; margin-bottom: 1.25rem; }
+.form-row > div { flex: 1; }
+
+.image-upload-preview {
+    width: 100%;
+    height: 200px;
+    background: var(--bg-dark);
+    border: 2px dashed var(--surface-light);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.image-upload-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}

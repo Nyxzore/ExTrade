@@ -34,6 +34,7 @@ import kotlinx.serialization.json.jsonPrimitive
  * Delegates networking to the shared [ApiService].
  */
 object Helpers {
+    const val NO_COMMON_NAME_PLACEHOLDER = "None (Uses Scientific Name)"
     private var HOSTED_SERVER = "https://exotrade.co.za/"
 
     private var cachedNavProfileBitmap: Bitmap? = null

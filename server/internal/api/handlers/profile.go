@@ -49,7 +49,7 @@ func GetProfile(c *gin.Context) {
             TRIM(CONCAT_WS(' ', t.genus, t.species, t.subspecies)) as scientific_name,
             t.common_name, l.price as raw_price, l.description, l.image_url,
             'sale' as kind, NULL as breeding_type, l.listed_time, l.sex, l.status,
-            u.subscription_tier
+            u.subscription_tier, u.whatsapp, u.facebook, u.instagram
      FROM listings l
      JOIN taxa t ON l.species_lsid = t.species_lsid
      JOIN users u ON l.seller_id = u.id
@@ -59,7 +59,7 @@ func GetProfile(c *gin.Context) {
             TRIM(CONCAT_WS(' ', t.genus, t.species, t.subspecies)) as scientific_name,
             t.common_name, bl.loan_fee as raw_price, bl.description, bl.image_url,
             'breeding' as kind, bl.breeding_type, bl.listed_time, bl.sex, bl.status,
-            u.subscription_tier
+            u.subscription_tier, u.whatsapp, u.facebook, u.instagram
      FROM breeding_listings bl
      JOIN taxa t ON bl.species_lsid = t.species_lsid
      JOIN users u ON bl.seller_id = u.id
@@ -82,10 +82,12 @@ func GetProfile(c *gin.Context) {
 				rawPrice                                                           *float64
 				listedTime                                                         time.Time
 				subscriptionTier                                                   int
+				whatsapp, facebook, instagram                                      *string
 			)
 
 			if err := rows.Scan(&id, &sellerID, &speciesLSID, &scientificName, &commonName, &rawPrice,
-				&description, &imageURL, &kind, &breedingType, &listedTime, &sex, &status, &subscriptionTier); err != nil {
+				&description, &imageURL, &kind, &breedingType, &listedTime, &sex, &status, &subscriptionTier,
+				&whatsapp, &facebook, &instagram); err != nil {
 				continue
 			}
 
@@ -124,6 +126,9 @@ func GetProfile(c *gin.Context) {
 				"sex":               sex,
 				"status":            status,
 				"subscription_tier": subscriptionTier,
+				"whatsapp":          whatsapp,
+				"facebook":          facebook,
+				"instagram":         instagram,
 			})
 		}
 	}
@@ -146,7 +151,7 @@ func GetProfile(c *gin.Context) {
 func UpdateProfile(c *gin.Context) {
 	userID, _ := c.Get("userID")
 
-	username := c.PostForm("username")
+	username := strings.TrimSpace(c.PostForm("username"))
 	email := strings.ToLower(strings.TrimSpace(c.PostForm("email")))
 	profilePictureData := c.PostForm("profile_picture_data")
 	newPassword := c.PostForm("new_password")
@@ -167,7 +172,7 @@ func UpdateProfile(c *gin.Context) {
 
 	// Check duplicates
 	var exists bool
-	db.Pool.QueryRow(context.Background(), "SELECT EXISTS(SELECT 1 FROM users WHERE username = $1 AND id != $2)", username, userID).Scan(&exists)
+	db.Pool.QueryRow(context.Background(), "SELECT EXISTS(SELECT 1 FROM users WHERE LOWER(username) = LOWER($1) AND id != $2)", username, userID).Scan(&exists)
 	if exists {
 		utils.SendError(c, http.StatusConflict, "Username already taken", nil)
 		return

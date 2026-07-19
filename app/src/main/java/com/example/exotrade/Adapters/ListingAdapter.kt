@@ -72,8 +72,16 @@ class ListingAdapter(
 
         fun bind(listing: Listing, listener: OnListingListener?) {
             with(binding) {
-                lblCommonName.text = listing.commonName
-                lblScientificName.text = listing.scientificName
+                val isNoCommon = listing.commonName == Helpers.NO_COMMON_NAME_PLACEHOLDER || listing.commonName.isNullOrEmpty()
+                lblCommonName.text = if (isNoCommon) listing.scientificName else listing.commonName
+                
+                if (isNoCommon) {
+                    lblScientificName.visibility = View.GONE
+                } else {
+                    lblScientificName.visibility = View.VISIBLE
+                    lblScientificName.text = listing.scientificName
+                }
+                
                 lblPrice.text = listing.price
                 lblDescription.text = listing.description
 

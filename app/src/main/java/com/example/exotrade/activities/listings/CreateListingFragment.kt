@@ -52,6 +52,10 @@ class CreateListingFragment : Fragment() {
             binding.imgPreview.setImageURI(it)
             selectedImageUri = it
             binding.imgPreview.alpha = 1.0f
+            
+            // Update preview card
+            val previewBinding = binding.previewCard
+            previewBinding.imgCoverImage.setImageURI(it)
         }
     }
 
@@ -109,6 +113,52 @@ class CreateListingFragment : Fragment() {
         }
 
         binding.btnCreateListing.setOnClickListener { createListing() }
+        setupPreviewLogic()
+    }
+
+    private fun setupPreviewLogic() {
+        val previewBinding = binding.previewCard
+        
+        fun updatePreview() {
+            val scientific = binding.etScientificName.text.toString()
+            val common = binding.etCommonName.text.toString()
+            val price = binding.etPrice.text.toString()
+            val desc = binding.etDescription.text.toString()
+
+            val isNoCommon = common == Helpers.NO_COMMON_NAME_PLACEHOLDER || common.isEmpty()
+            previewBinding.lblCommonName.text = if (isNoCommon) scientific.ifEmpty { "Species Name" } else common
+            
+            if (isNoCommon) {
+                previewBinding.lblScientificName.visibility = View.GONE
+            } else {
+                previewBinding.lblScientificName.visibility = View.VISIBLE
+                previewBinding.lblScientificName.text = scientific.ifEmpty { "Scientific Name" }
+            }
+
+            previewBinding.lblPrice.text = if (price.isEmpty()) "R 0.00" else "R $price"
+            previewBinding.lblDescription.text = desc.ifEmpty { "Description goes here..." }
+            
+            // If it's breeding, change price label logic
+            if (currentListingType == "breeding") {
+                previewBinding.lblPrice.text = "Stud Fee: R $price"
+            }
+        }
+
+        val watcher = object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                updatePreview()
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        }
+
+        binding.etScientificName.addTextChangedListener(watcher)
+        binding.etCommonName.addTextChangedListener(watcher)
+        binding.etPrice.addTextChangedListener(watcher)
+        binding.etDescription.addTextChangedListener(watcher)
+
+        // Initial update
+        updatePreview()
     }
 
     private fun showInfoDialog() {
@@ -175,7 +225,7 @@ class CreateListingFragment : Fragment() {
                     if (!common.isNullOrEmpty()) {
                         binding.etCommonName.setText(common, false)
                     } else {
-                        binding.etCommonName.setText("None (Uses Scientific Name)", false)
+                        binding.etCommonName.setText(Helpers.NO_COMMON_NAME_PLACEHOLDER, false)
                     }
                 }
             }
@@ -264,13 +314,13 @@ class CreateListingFragment : Fragment() {
 
             if (isUnverifiedScientific) {
                 params["unverified_scientific_name"] = scientificName
-                params["unverified_common_name"] = commonName
+                params["unverified_common_name"] = if (commonName == Helpers.NO_COMMON_NAME_PLACEHOLDER) "" else commonName
             } else {
                 val lsid = speciesRepository.getLsid(scientificName)
                 params["species_lsid"] = lsid ?: ""
                 
                 // Check if common name is custom even if scientific is valid
-                if (commonName.isNotEmpty() && speciesRepository.getScientificName(commonName) != scientificName) {
+                if (commonName.isNotEmpty() && commonName != Helpers.NO_COMMON_NAME_PLACEHOLDER && speciesRepository.getScientificName(commonName) != scientificName) {
                     params["unverified_common_name"] = commonName
                 }
             }

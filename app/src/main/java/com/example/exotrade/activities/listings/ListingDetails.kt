@@ -212,13 +212,22 @@ class ListingDetails : AppCompatActivity() {
                 }
 
                 // Apply UI updates safely
-                val common = getString("common_name").ifEmpty { "Unknown" }
-                listingName = common
-                binding.collapsingToolbar.title = common
-                binding.lblCommonName.text = common
-
+                val rawCommon = getString("common_name")
+                val isNoCommon = rawCommon == Helpers.NO_COMMON_NAME_PLACEHOLDER || rawCommon.isEmpty()
+                
                 val scientific = getString("scientific_name").ifEmpty { getString("genus") + " " + getString("species") }.ifEmpty { "Unknown" }
-                binding.lblScientificName.text = scientific
+                
+                val displayCommon = if (isNoCommon) scientific else rawCommon
+                listingName = displayCommon
+                binding.collapsingToolbar.title = displayCommon
+                binding.lblCommonName.text = displayCommon
+
+                if (isNoCommon) {
+                    binding.lblScientificName.visibility = View.GONE
+                } else {
+                    binding.lblScientificName.visibility = View.VISIBLE
+                    binding.lblScientificName.text = scientific
+                }
 
                 val distribution = getString("distribution")
                 binding.lblDistribution.text = if (distribution.isEmpty()) "Unknown" else distribution

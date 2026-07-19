@@ -106,8 +106,17 @@ class BreedingListingDetails : AppCompatActivity() {
                 val response: String = ExoTradeApplication.container.apiService.get("breeding/get_breeding_listing_details", params)
                 val json = Json.parseToJsonElement(response).jsonObject
                 if (json["status"]?.jsonPrimitive?.content == "success") {
-                    binding.lblCommonName.text = json["common_name"]?.jsonPrimitive?.content
-                    binding.lblScientificName.text = json["scientific_name"]?.jsonPrimitive?.content
+                    val rawCommon = json["common_name"]?.jsonPrimitive?.content ?: ""
+                    val scientific = json["scientific_name"]?.jsonPrimitive?.content ?: ""
+                    val isNoCommon = rawCommon == Helpers.NO_COMMON_NAME_PLACEHOLDER || rawCommon.isEmpty()
+
+                    binding.lblCommonName.text = if (isNoCommon) scientific else rawCommon
+                    if (isNoCommon) {
+                        binding.lblScientificName.visibility = View.GONE
+                    } else {
+                        binding.lblScientificName.visibility = View.VISIBLE
+                        binding.lblScientificName.text = scientific
+                    }
                     binding.lblPrice.text = json["price"]?.jsonPrimitive?.content
                     binding.lblSex.text = json["sex"]?.jsonPrimitive?.content
                     

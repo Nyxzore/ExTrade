@@ -64,6 +64,9 @@ func InitDB() error {
 
 		ALTER TABLE breeding_listings ADD COLUMN IF NOT EXISTS unverified_scientific_name TEXT;
 		ALTER TABLE breeding_listings ADD COLUMN IF NOT EXISTS unverified_common_name TEXT;
+
+		-- Ensure usernames are case-insensitive for uniqueness but preserve display casing
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_lower ON users (LOWER(username));
 	`)
 	if err != nil {
 		return fmt.Errorf("failed to update schema for unverified names: %v", err)

@@ -8,6 +8,7 @@ import (
 	"exotrade-server/pkg/utils"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -25,8 +26,8 @@ func generateSession(userID string) (string, error) {
 }
 
 func AuthHandler(c *gin.Context) {
-	username := c.PostForm("username")
-	email := c.PostForm("email")
+	username := strings.TrimSpace(c.PostForm("username"))
+	email := strings.ToLower(strings.TrimSpace(c.PostForm("email")))
 	password := c.PostForm("password")
 	mode := c.DefaultPostForm("mode", "login")
 	pepper := os.Getenv("AUTH_PEPPER")
@@ -82,7 +83,7 @@ func AuthHandler(c *gin.Context) {
 		var isBanned bool
 		var isAdmin bool
 
-		err := db.Pool.QueryRow(context.Background(), "SELECT id, password_hash, is_banned, is_admin FROM users WHERE username = $1", username).
+		err := db.Pool.QueryRow(context.Background(), "SELECT id, password_hash, is_banned, is_admin FROM users WHERE LOWER(username) = LOWER($1)", username).
 			Scan(&id, &passwordHash, &isBanned, &isAdmin)
 
 		if err != nil {
@@ -125,7 +126,7 @@ func AuthHandler(c *gin.Context) {
 		}
 
 		var exists bool
-		db.Pool.QueryRow(context.Background(), "SELECT EXISTS(SELECT 1 FROM users WHERE username = $1 OR email = $2)", username, email).Scan(&exists)
+		db.Pool.QueryRow(context.Background(), "SELECT EXISTS(SELECT 1 FROM users WHERE LOWER(username) = LOWER($1) OR email = $2)", username, email).Scan(&exists)
 		if exists {
 			utils.SendError(c, http.StatusConflict, "Username or email already taken", nil)
 			return

@@ -179,8 +179,12 @@ func CreateListing(c *gin.Context) {
 		return
 	}
 
+	if unverifiedCommon == "None (Uses Scientific Name)" {
+		unverifiedCommon = ""
+	}
+
 	// Log unverified common name if provided
-	if unverifiedCommon != "" {
+	if unverifiedCommon != "" && unverifiedCommon != "None (Uses Scientific Name)" {
 		db.Pool.Exec(context.Background(),
 			"INSERT INTO user_common_names (scientific_name, common_name, user_id) VALUES ($1, $2, $3)",
 			unverifiedScientific, unverifiedCommon, userID)
@@ -318,7 +322,8 @@ func GetListingDetails(c *gin.Context) {
                COALESCE(t.genus, ''), COALESCE(t.species, ''), t.subspecies,
                COALESCE(t.common_name, l.unverified_common_name) as common_name,
                t.distribution,
-               (SELECT COUNT(*) FROM listing_impressions WHERE listing_id = l.id) as view_count,
+               (SELECT COUNT(DISTINCT(user_id)) FROM listing_impressions WHERE listing_id = l.id) as view_count,
+
                l.unverified_scientific_name,
                (l.species_lsid IS NULL) as is_unverified_scientific,
                (t.common_name IS NULL AND l.unverified_common_name IS NOT NULL) as is_unverified_common

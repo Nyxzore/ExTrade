@@ -36,50 +36,15 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingHorizontal="20dp"
+                android:paddingHorizontal="16dp"
                 android:paddingTop="8dp">
-
-                <!-- Photo -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardImage"
-                    style="@style/Widget.Material3.CardView.Elevated"
-                    android:layout_width="match_parent"
-                    android:layout_height="180dp"
-                    android:layout_marginBottom="24dp"
-                    app:cardCornerRadius="24dp">
-
-                    <FrameLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent">
-
-                        <ImageView
-                            android:id="@+id/imgPreview"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:alpha="0.2"
-                            android:contentDescription="@string/photos"
-                            android:scaleType="centerCrop"
-                            android:src="@drawable/logo" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnAddImage"
-                            style="@style/Widget.Material3.Button.TonalButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:text="@string/add_primary_photo"
-                            app:icon="@android:drawable/ic_menu_camera" />
-
-                    </FrameLayout>
-
-                </com.google.android.material.card.MaterialCardView>
 
                 <!-- Listing Type Toggle -->
                 <com.google.android.material.button.MaterialButtonToggleGroup
                     android:id="@+id/toggleListingType"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="24dp"
+                    android:layout_marginBottom="16dp"
                     app:checkedButton="@+id/btnTypeSale"
                     app:selectionRequired="true"
                     app:singleSelection="true">
@@ -102,41 +67,112 @@
 
                 </com.google.android.material.button.MaterialButtonToggleGroup>
 
-                <!-- Species Names -->
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.App.TextInputLayout.NameInput"
+                <!-- CARD-LIKE INPUT SECTION -->
+                <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="@string/scientific_name">
+                    android:layout_marginBottom="16dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="0dp">
 
-                    <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                        android:id="@+id/etScientificName"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:minHeight="64dp"
-                        android:gravity="center_vertical"
-                        android:inputType="textCapWords" />
+                        android:orientation="vertical">
 
-                </com.google.android.material.textfield.TextInputLayout>
+                        <FrameLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="180dp"
+                            android:background="?attr/colorSurfaceVariant">
 
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.App.TextInputLayout.NameInput"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="24dp"
-                    android:hint="@string/common_name">
+                            <ImageView
+                                android:id="@+id/imgPreview"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:alpha="0.8" />
 
-                    <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                        android:id="@+id/etCommonName"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:minHeight="64dp"
-                        android:gravity="center_vertical"
-                        android:inputType="textCapWords" />
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnAddImage"
+                                style="@style/Widget.Material3.Button.TonalButton"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center"
+                                android:text="@string/add_primary_photo"
+                                app:icon="@android:drawable/ic_menu_camera" />
 
-                </com.google.android.material.textfield.TextInputLayout>
+                        </FrameLayout>
 
-                <!-- Row 1: Sex and Size -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="12dp">
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="@string/common_name"
+                                app:boxStrokeWidth="0dp"
+                                app:boxStrokeWidthFocused="0dp"
+                                app:hintEnabled="true">
+
+                                <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                                    android:id="@+id/etCommonName"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:padding="0dp"
+                                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                                    android:inputType="textCapWords" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="@string/scientific_name"
+                                app:boxStrokeWidth="0dp"
+                                app:boxStrokeWidthFocused="0dp">
+
+                                <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                                    android:id="@+id/etScientificName"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:padding="0dp"
+                                    android:textAppearance="?attr/textAppearanceBodySmall"
+                                    android:textStyle="italic"
+                                    android:inputType="textCapWords" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:hint="@string/asking_price"
+                                app:boxStrokeWidth="0dp"
+                                app:boxStrokeWidthFocused="0dp"
+                                app:prefixText="R ">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/etPrice"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:padding="0dp"
+                                    android:textColor="?attr/colorPrimary"
+                                    android:textAppearance="?attr/textAppearanceTitleSmall"
+                                    android:inputType="numberDecimal" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- DETAILS SECTION -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -177,11 +213,10 @@
 
                 </LinearLayout>
 
-                <!-- Row 2: Age and Unit -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="24dp"
+                    android:layout_marginBottom="16dp"
                     android:baselineAligned="false"
                     android:orientation="horizontal">
 
@@ -219,29 +254,11 @@
 
                 </LinearLayout>
 
-                <!-- Pricing -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="24dp"
-                    android:hint="@string/asking_price"
-                    app:prefixText="R ">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etPrice"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="numberDecimal" />
-
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Description -->
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="32dp"
                     android:hint="@string/description"
                     app:counterEnabled="true"
                     app:counterMaxLength="150">
@@ -252,11 +269,29 @@
                         android:layout_height="wrap_content"
                         android:gravity="top"
                         android:inputType="textMultiLine"
-                        android:minLines="3" />
+                        android:minLines="2" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Submit -->
+                <!-- LIVE PREVIEW SECTION -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="Feed Preview"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.1"
+                    android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
+                    android:textColor="?attr/colorPrimary" />
+
+                <include
+                    android:id="@+id/previewCard"
+                    layout="@layout/listing_item"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp" />
+
+                <!-- SUBMIT -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnCreateListing"
                     style="@style/Widget.Material3.Button"
