@@ -1,12 +1,14 @@
 package com.example.exotrade.activities
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import com.example.exotrade.ExoTradeApplication
 import com.example.exotrade.R
 import com.example.exotrade.activities.admin.AdminActivity
+import com.example.exotrade.activities.auth.Login
 import com.example.exotrade.activities.listings.BrowseListingsFragment
 import com.example.exotrade.activities.listings.CreateListingFragment
 import com.example.exotrade.activities.messaging.InboxFragment
@@ -137,6 +139,31 @@ class MainHostActivity : BaseActivity() {
     }
 
     private fun handleIntent(intent: Intent) {
+        val session = ExoTradeApplication.container.sessionRepository
+        if (!session.isLoggedIn()) {
+            val loginIntent = Intent(this, Login::class.java)
+            loginIntent.data = intent.data
+            startActivity(loginIntent)
+            finish()
+            return
+        }
+
+        val data = intent.data
+        if (data != null) {
+            val path = data.path ?: ""
+            val id = data.lastPathSegment
+
+            if (path.startsWith("/listing/")) {
+                val detailIntent = Intent(this, com.example.exotrade.activities.listings.ListingDetails::class.java)
+                detailIntent.putExtra("listing_id", id)
+                startActivity(detailIntent)
+            } else if (path.startsWith("/breeding/")) {
+                val detailIntent = Intent(this, com.example.exotrade.activities.breeding.BreedingListingDetails::class.java)
+                detailIntent.putExtra("listing_id", id)
+                startActivity(detailIntent)
+            }
+        }
+
         val initialTab = intent.getIntExtra("initial_tab", -1)
         if (initialTab != -1) {
             switchTab(initialTab)

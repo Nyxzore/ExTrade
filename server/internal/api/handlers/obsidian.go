@@ -12,10 +12,10 @@ import (
 )
 
 func GetGraphData(c *gin.Context) {
-	obsidianDir := "./Obsidian/ExTrade"
-	files, err := os.ReadDir(obsidianDir)
+	publicDocsDir := "./public_docs"
+	files, err := os.ReadDir(publicDocsDir)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, "Could not read Obsidian directory", nil)
+		utils.SendError(c, http.StatusInternalServerError, "Could not read public docs directory", nil)
 		return
 	}
 
@@ -40,7 +40,7 @@ func GetGraphData(c *gin.Context) {
 	for _, file := range files {
 		if !file.IsDir() && strings.HasSuffix(file.Name(), ".md") {
 			source := strings.TrimSuffix(file.Name(), ".md")
-			content, _ := os.ReadFile(filepath.Join(obsidianDir, file.Name()))
+			content, _ := os.ReadFile(filepath.Join(publicDocsDir, file.Name()))
 
 			matches := re.FindAllStringSubmatch(string(content), -1)
 			for _, match := range matches {
@@ -71,7 +71,7 @@ func GetNoteContent(c *gin.Context) {
 
 	// Security: Prevent directory traversal
 	note = filepath.Base(note)
-	path := filepath.Join("./Obsidian/ExTrade", note+".md")
+	path := filepath.Join("./public_docs", note+".md")
 
 	content, err := os.ReadFile(path)
 	if err != nil {

@@ -16,6 +16,7 @@ jna = "5.17.0"
 swiperefreshlayout = "1.1.0"
 lifecycle = "2.7.0"
 playServicesAuth = "21.3.0"
+credentials = "1.7.0-alpha02"
 fragmentKtx = "1.8.0"
 kotlin = "2.0.0"
 
@@ -46,6 +47,8 @@ glide-compiler = { group = "com.github.bumptech.glide", name = "compiler", versi
 lazysodium-android = { group = "com.goterl", name = "lazysodium-android", version.ref = "lazysodium" }
 jna = { group = "net.java.dev.jna", name = "jna", version.ref = "jna" }
 play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
+androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
+androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentials" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -32,8 +32,18 @@ func main() {
 	r.SetTrustedProxies([]string{"127.0.0.1"})
 
 	// Legacy Static Page
+	r.StaticFile("/", "./index.html")
+	r.StaticFile("/logo.png", "./logo.png")
 	r.StaticFile("/get-app", "./get-app.html")
 	r.StaticFile("/exotrade-api-docs.html", "./exotrade-api-docs.html")
+
+	// Deep Link / Share redirects
+	r.GET("/listing/:id", func(c *gin.Context) {
+		c.File("./get-app.html")
+	})
+	r.GET("/breeding/:id", func(c *gin.Context) {
+		c.File("./get-app.html")
+	})
 
 	// API Routes
 	api := r.Group("/")
@@ -47,6 +57,8 @@ func main() {
 
 		// Auth
 		api.POST("/auth/auth", handlers.AuthHandler)
+		api.POST("/auth/forgot-password", handlers.ForgotPasswordHandler)
+		api.POST("/auth/reset-password", handlers.ResetPasswordHandler)
 
 		// Protected Routes
 		protected := api.Group("/")

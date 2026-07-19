@@ -36,6 +36,8 @@ dependencies {
 
     implementation(libs.glide)
     implementation(libs.play.services.auth)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
 
     // Ktor
     implementation(libs.ktor.client.core)
@@ -53,4 +55,10 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
+    compilerOptions {
+        freeCompilerArgs.add("-opt-in=androidx.credentials.ExperimentalDigitalCredentialApi")
+    }
 }

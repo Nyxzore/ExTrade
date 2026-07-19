@@ -36,6 +36,19 @@ func InitDB() error {
 	}
 
 	Pool = p
+
+	// Ensure password_resets table exists
+	_, err = Pool.Exec(context.Background(), `
+		CREATE TABLE IF NOT EXISTS password_resets (
+			token TEXT PRIMARY KEY,
+			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			expires_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW() + INTERVAL '1 hour'
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to create password_resets table: %v", err)
+	}
+
 	return nil
 }
 

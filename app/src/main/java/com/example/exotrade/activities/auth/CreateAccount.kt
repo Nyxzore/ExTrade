@@ -5,21 +5,28 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.util.Base64
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.credentials.CredentialManager
+import androidx.credentials.DigitalCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetDigitalCredentialOption
 import androidx.lifecycle.lifecycleScope
 import com.example.exotrade.ExoTradeApplication
 import com.example.exotrade.activities.MainHostActivity
-import com.example.exotrade.databinding.AuthActivityRegisterBinding
-import com.example.exotrade.utils.ImageUtils
 import com.example.exotrade.data.SessionRepository
+import com.example.exotrade.databinding.AuthActivityRegisterBinding
+import com.example.exotrade.utils.*
 import io.ktor.client.plugins.ResponseException
 import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import org.json.JSONObject
+import java.security.SecureRandom
 
 /**
  * Activity for registering a new user account.
@@ -32,6 +39,7 @@ class CreateAccount : AppCompatActivity() {
     private lateinit var session: SessionRepository
     private var selectedImageUri: Uri? = null
     private var pendingIdentityKeys: Pair<String, ByteArray>? = null
+    private lateinit var credentialManager: CredentialManager
 
     /**
      * Launcher for the system image picker to select a profile picture.
@@ -65,9 +73,89 @@ class CreateAccount : AppCompatActivity() {
         binding = AuthActivityRegisterBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        credentialManager = CredentialManager.create(this)
+
         binding.btnSelectImage.setOnClickListener { imagePickerLauncher.launch("image/*") }
+        binding.btnVerifyEmail.setOnClickListener { fetchVerifiedEmail() }
         binding.btnCreateAccount.setOnClickListener { create_account() }
         binding.tvLogin.setOnClickListener { switch_to_login() }
+    }
+
+    private fun fetchVerifiedEmail() {
+        val nonce = generateSecureRandomNonce()
+        val openId4vpRequest = """
+        {
+          "requests": [
+            {
+              "protocol": "openid4vp-v1-unsigned",
+              "data": {
+                "response_type": "vp_token",
+                "response_mode": "dc_api",
+                "nonce": "$nonce",
+                "dcql_query": {
+                  "credentials": [
+                    {
+                      "id": "user_info_query",
+                      "format": "dc+sd-jwt",
+                       "meta": { 
+                          "vct_values": ["UserInfoCredential"] 
+                       },
+                      "claims": [ 
+                        {"path": ["email"]}, 
+                        {"path": ["name"]},  
+                        {"path": ["given_name"]},
+                        {"path": ["family_name"]},
+                        {"path": ["picture"]},
+                        {"path": ["hd"]},
+                        {"path": ["email_verified"]}
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+        """
+
+        val getDigitalCredentialOption = GetDigitalCredentialOption(requestJson = openId4vpRequest)
+        val request = GetCredentialRequest(listOf(getDigitalCredentialOption))
+
+        lifecycleScope.launch {
+            try {
+                val result = credentialManager.getCredential(this@CreateAccount, request)
+                val credential = result.credential
+                if (credential is DigitalCredential) {
+                    val responseJsonString = credential.credentialJson
+                    val responseData = JSONObject(responseJsonString)
+                    val vpToken = responseData.getJSONObject("vp_token")
+                    val credentialId = vpToken.keys().next()
+                    val rawSdJwt = vpToken.getJSONArray(credentialId).getString(0)
+
+                    val claims = SdJwtParser.parse(rawSdJwt)
+                    val email = claims.optString("email", "")
+                    val name = claims.optString("name", "")
+
+                    if (email.isNotEmpty()) {
+                        binding.etEmail.setText(email)
+                        if (name.isNotEmpty()) {
+                            binding.etUsername.setText(name.replace(" ", "").lowercase())
+                        }
+                        Toast.makeText(this@CreateAccount, "Email verified: $email", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("CreateAccount", "Credential Manager error", e)
+                Toast.makeText(this@CreateAccount, "Verification failed or cancelled", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun generateSecureRandomNonce(): String {
+        val random = SecureRandom()
+        val bytes = ByteArray(16)
+        random.nextBytes(bytes)
+        return Base64.encodeToString(bytes, Base64.URL_SAFE or Base64.NO_WRAP)
     }
 
     /**

@@ -19,11 +19,37 @@
 
         <activity
             android:name=".activities.MainHostActivity"
-            android:launchMode="singleTask" />
+            android:exported="true"
+            android:launchMode="singleTask">
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="https" />
+                <data android:host="exotrade.co.za" />
+                <data android:pathPrefix="/listing/" />
+                <data android:pathPrefix="/breeding/" />
+            </intent-filter>
+        </activity>
         <activity android:name=".activities.NoInternetActivity" />
         <activity android:name=".activities.UpdateRequiredActivity" />
         <activity android:name=".activities.admin.AdminActivity" />
         <activity android:name=".activities.auth.CreateAccount" />
+        <activity android:name=".activities.auth.ForgotPasswordActivity" />
+        <activity
+            android:name=".activities.auth.ResetPasswordActivity"
+            android:exported="true">
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="exotrade.co.za" />
+                <data android:pathPrefix="/reset-password" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".activities.auth.Login"
             android:exported="true">

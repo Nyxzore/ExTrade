@@ -9,7 +9,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Quick Friends"
+        android:text="Friends"
         android:textAppearance="?attr/textAppearanceTitleLarge"
         android:layout_marginBottom="16dp" />
 

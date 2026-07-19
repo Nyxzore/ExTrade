@@ -55,6 +55,9 @@ class Login : BaseActivity() {
         viewModel.preloadSpecies()
 
         binding.btnLogin.setOnClickListener { login() }
+        binding.tvForgotPassword.setOnClickListener {
+            startActivity(Intent(this, ForgotPasswordActivity::class.java))
+        }
         binding.tvRegister.setOnClickListener {
             startActivity(Intent(this, CreateAccount::class.java))
             finish()
@@ -105,6 +108,7 @@ class Login : BaseActivity() {
 
     private fun goToMainPage() {
         val intent = Intent(this, MainHostActivity::class.java)
+        intent.data = this.intent.data
         startActivity(intent)
         finish()
     }
