@@ -168,6 +168,7 @@ class CreateBreedingListing : BaseActivity() {
 
     private fun createBreedingListing() {
         val scientificName = binding.etScientificName.text.toString().trim()
+        val commonName = binding.etCommonName.text.toString().trim()
         val fee = binding.etLoanFee.text.toString().trim()
         val description = binding.etDescription.text.toString().trim()
         val sex = binding.etSex.text.toString().trim()
@@ -181,14 +182,49 @@ class CreateBreedingListing : BaseActivity() {
                 return@launch
             }
 
-            if (!speciesRepository.isValidSpecies(scientificName)) {
-                Toast.makeText(this@CreateBreedingListing, "Select a valid species", Toast.LENGTH_SHORT).show()
+            val isValid = speciesRepository.isValidSpecies(scientificName)
+            if (!isValid) {
+                androidx.appcompat.app.AlertDialog.Builder(this@CreateBreedingListing)
+                    .setTitle("Unverified Species")
+                    .setMessage("This scientific name is not in our database. You can still publish, but it will be marked as unverified until an admin reviews it. \n\nContinue?")
+                    .setPositiveButton("Publish Anyway") { _, _ ->
+                        performPublish(scientificName, commonName, fee, description, sex, size, ageStr, unit, true)
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
                 return@launch
             }
 
-            val lsid = speciesRepository.getLsid(scientificName) ?: ""
+            val isCommonValid = commonName.isEmpty() || speciesRepository.getScientificName(commonName) == scientificName
+            if (!isCommonValid) {
+                androidx.appcompat.app.AlertDialog.Builder(this@CreateBreedingListing)
+                    .setTitle("Unverified Common Name")
+                    .setMessage("This common name is not recognized for this species. It will be sent for admin review. \n\nContinue?")
+                    .setPositiveButton("Publish Anyway") { _, _ ->
+                        performPublish(scientificName, commonName, fee, description, sex, size, ageStr, unit, false)
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+                return@launch
+            }
+
+            performPublish(scientificName, commonName, fee, description, sex, size, ageStr, unit, false)
+        }
+    }
+
+    private fun performPublish(
+        scientificName: String,
+        commonName: String,
+        fee: String,
+        description: String,
+        sex: String,
+        size: String,
+        ageStr: String,
+        unit: String,
+        isUnverifiedScientific: Boolean
+    ) {
+        lifecycleScope.launch {
             val params = session.authParams().toMutableMap()
-            params["species_lsid"] = lsid
             params["sex"] = sex
             params["breeding_type"] = currentBreedingType
             if (currentBreedingType == "loan") {
@@ -196,6 +232,18 @@ class CreateBreedingListing : BaseActivity() {
             }
             params["description"] = description
             params["size_in_cm"] = size
+
+            if (isUnverifiedScientific) {
+                params["unverified_scientific_name"] = scientificName
+                params["unverified_common_name"] = commonName
+            } else {
+                val lsid = speciesRepository.getLsid(scientificName) ?: ""
+                params["species_lsid"] = lsid
+                
+                if (commonName.isNotEmpty() && speciesRepository.getScientificName(commonName) != scientificName) {
+                    params["unverified_common_name"] = commonName
+                }
+            }
             
             if (ageStr.isNotEmpty()) {
                 try {

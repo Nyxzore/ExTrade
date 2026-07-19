@@ -28,6 +28,19 @@
                     android:scaleType="centerCrop"
                     tools:src="@tools:sample/backgrounds/scenic" />
 
+                <ImageView
+                    android:id="@+id/imgUnverified"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="top|end"
+                    android:layout_margin="8dp"
+                    android:background="@drawable/circle"
+                    android:backgroundTint="#80000000"
+                    android:padding="4dp"
+                    android:src="@drawable/ic_unverified"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+
                 <TextView
                     android:id="@+id/lblSoldBadge"
                     android:layout_width="match_parent"

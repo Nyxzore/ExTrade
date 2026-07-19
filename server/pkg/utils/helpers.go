@@ -55,3 +55,10 @@ func DerefString(s *string) string {
 	}
 	return *s
 }
+
+func EmptyToNull(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}

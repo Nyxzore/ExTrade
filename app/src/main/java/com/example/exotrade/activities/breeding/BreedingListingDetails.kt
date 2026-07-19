@@ -21,6 +21,8 @@ import com.example.exotrade.utils.ShareUtils
 import com.example.exotrade.utils.SocialLinkUtils
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -122,6 +124,31 @@ class BreedingListingDetails : AppCompatActivity() {
                     sellerWhatsApp = json["whatsapp"]?.jsonPrimitive?.content
                     sellerFacebook = json["facebook"]?.jsonPrimitive?.content
                     sellerInstagram = json["instagram"]?.jsonPrimitive?.content
+
+                    val isUnverifiedSci = json["is_unverified_scientific"]?.jsonPrimitive?.boolean ?: false
+                    val isUnverifiedCom = json["is_unverified_common"]?.jsonPrimitive?.boolean ?: false
+
+                    if (isUnverifiedSci || isUnverifiedCom) {
+                        binding.imgUnverified.visibility = View.VISIBLE
+                        binding.imgUnverified.setOnClickListener {
+                            val msg = if (isUnverifiedSci) "Unverified scientific name/species" else "Unverified common name"
+                            androidx.appcompat.app.AlertDialog.Builder(this@BreedingListingDetails)
+                                .setTitle("Verification Status")
+                                .setMessage(msg)
+                                .setPositiveButton("OK", null)
+                                .show()
+                        }
+                    } else {
+                        binding.imgUnverified.visibility = View.GONE
+                    }
+
+                    val viewCount = json["view_count"]?.jsonPrimitive?.int ?: 0
+                    if (session.getUserUUID() == sellerId) {
+                        binding.lblViewCount.visibility = View.VISIBLE
+                        binding.lblViewCount.text = "$viewCount views"
+                    } else {
+                        binding.lblViewCount.visibility = View.GONE
+                    }
 
                     SocialLinkUtils.bindProfileIcons(
                         this@BreedingListingDetails,

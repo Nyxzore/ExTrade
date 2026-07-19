@@ -32,8 +32,8 @@ func GetBreedingListings(c *gin.Context) {
         SELECT bl.id,
                bl.seller_id,
                u.username as seller_name,
-               TRIM(CONCAT_WS(' ', t.genus, t.species, t.subspecies)) as scientific_name,
-               t.common_name,
+               COALESCE(TRIM(CONCAT_WS(' ', t.genus, t.species, t.subspecies)), bl.unverified_scientific_name) as scientific_name,
+               COALESCE(t.common_name, bl.unverified_common_name) as common_name,
                bl.description,
                bl.sex,
                bl.status,
@@ -45,6 +45,8 @@ func GetBreedingListings(c *gin.Context) {
                u.whatsapp,
                u.facebook,
                u.instagram,
+               (bl.species_lsid IS NULL) as is_unverified_scientific,
+               (t.common_name IS NULL AND bl.unverified_common_name IS NOT NULL) as is_unverified_common,
                (((CASE COALESCE(u.subscription_tier, 0)
                     WHEN 2 THEN 5
                     WHEN 1 THEN 2
@@ -58,14 +60,14 @@ func GetBreedingListings(c *gin.Context) {
                         END)))
                / POWER(1 + COALESCE(ic.times_shown_recently, 0), 0.15))
                * (CASE WHEN $2::text IS NOT NULL
-                       THEN (POWER(similarity(t.common_name, $2::text), 3) * 50.0 + 1.0)
+                       THEN (POWER(similarity(COALESCE(t.common_name, bl.unverified_common_name, ''), $2::text), 3) * 50.0 + 1.0)
                        ELSE 1.0
                   END) as exposure_score
         FROM breeding_listings bl
-        JOIN taxa t ON bl.species_lsid = t.species_lsid
+        LEFT JOIN taxa t ON bl.species_lsid = t.species_lsid
         JOIN users u ON bl.seller_id = u.id
         LEFT JOIN impression_counts ic ON ic.listing_id = bl.id
-        WHERE bl.status = 'active'`
+        WHERE bl.status = 'active' AND bl.seller_id != $1`
 
 	params := []any{userID, search, seed}
 	paramCount := 4
@@ -108,18 +110,19 @@ func GetBreedingListings(c *gin.Context) {
 
 	for rows.Next() {
 		var (
-			id, subscriptionTier                              int
-			sellerID, sellerName, scientificName, description string
-			sex, status, breedingType, imageURL               string
-			commonName, whatsapp, facebook, instagram          *string
-			loanFee                                            *float64
-			listedTime                                         time.Time
-			exposureScore, probability                         float64
+			id, subscriptionTier                                        int
+			sellerID, sellerName, scientificName, description           string
+			sex, status, breedingType, imageURL                         string
+			commonName, whatsapp, facebook, instagram                   *string
+			loanFee                                                     *float64
+			listedTime                                                  time.Time
+			isUnverifiedScientific, isUnverifiedCommon                  bool
+			exposureScore, probability                                  float64
 		)
 
 		if err := rows.Scan(&id, &sellerID, &sellerName, &scientificName, &commonName,
 			&description, &sex, &status, &breedingType, &loanFee, &imageURL, &listedTime,
-			&subscriptionTier, &whatsapp, &facebook, &instagram, &exposureScore, &probability); err != nil {
+			&subscriptionTier, &whatsapp, &facebook, &instagram, &isUnverifiedScientific, &isUnverifiedCommon, &exposureScore, &probability); err != nil {
 			continue
 		}
 
@@ -138,24 +141,26 @@ func GetBreedingListings(c *gin.Context) {
 		}
 
 		listings = append(listings, map[string]any{
-			"id":                id,
-			"seller_id":         sellerID,
-			"seller_name":       sellerName,
-			"scientific_name":   scientificName,
-			"common_name":       displayCommonName,
-			"price":             priceDisplay,
-			"description":       description,
-			"image_url":         imageURL,
-			"sex":               sex,
-			"status":            status,
-			"breeding_type":     breedingType,
-			"listed_time":       listedTime,
-			"exposure_score":    exposureScore,
-			"probability":       probability,
-			"subscription_tier": subscriptionTier,
-			"whatsapp":          whatsapp,
-			"facebook":          facebook,
-			"instagram":         instagram,
+			"id":                       id,
+			"seller_id":                sellerID,
+			"seller_name":              sellerName,
+			"scientific_name":          scientificName,
+			"common_name":              displayCommonName,
+			"price":                    priceDisplay,
+			"description":              description,
+			"image_url":                imageURL,
+			"sex":                      sex,
+			"status":                   status,
+			"breeding_type":            breedingType,
+			"listed_time":              listedTime,
+			"exposure_score":           exposureScore,
+			"probability":              probability,
+			"subscription_tier":        subscriptionTier,
+			"whatsapp":                 whatsapp,
+			"facebook":                 facebook,
+			"instagram":                instagram,
+			"is_unverified_scientific": isUnverifiedScientific,
+			"is_unverified_common":     isUnverifiedCommon,
 		})
 		ids = append(ids, int64(id))
 	}
@@ -173,6 +178,8 @@ func CreateBreedingListing(c *gin.Context) {
 	userID, _ := c.Get("userID")
 
 	speciesLSID := c.PostForm("species_lsid")
+	unverifiedScientific := c.PostForm("unverified_scientific_name")
+	unverifiedCommon := c.PostForm("unverified_common_name")
 	sex := c.PostForm("sex")
 	breedingType := c.PostForm("breeding_type")
 	loanFeeStr := c.PostForm("loan_fee")
@@ -181,9 +188,16 @@ func CreateBreedingListing(c *gin.Context) {
 	ageInDaysStr := c.PostForm("age_in_days")
 	imageBase64 := c.PostForm("image_data")
 
-	if speciesLSID == "" || sex == "" || breedingType == "" {
+	if (speciesLSID == "" && unverifiedScientific == "") || sex == "" || breedingType == "" {
 		utils.SendError(c, http.StatusBadRequest, "Required fields missing", nil)
 		return
+	}
+
+	// Log unverified common name
+	if unverifiedCommon != "" {
+		db.Pool.Exec(context.Background(),
+			"INSERT INTO user_common_names (scientific_name, common_name, user_id) VALUES ($1, $2, $3)",
+			unverifiedScientific, unverifiedCommon, userID)
 	}
 
 	if sex != "Male" && sex != "Female" {
@@ -222,9 +236,9 @@ func CreateBreedingListing(c *gin.Context) {
 	imageURL, _ := utils.SaveBase64Image(imageBase64, "breeding")
 
 	var listingID int
-	query := `INSERT INTO breeding_listings (seller_id, species_lsid, sex, size_in_cm, age, description, image_url, breeding_type, loan_fee)
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`
-	err := db.Pool.QueryRow(context.Background(), query, userID, speciesLSID, sex, size, ageInDays, description, imageURL, breedingType, loanFee).Scan(&listingID)
+	query := `INSERT INTO breeding_listings (seller_id, species_lsid, unverified_scientific_name, unverified_common_name, sex, size_in_cm, age, description, image_url, breeding_type, loan_fee)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`
+	err := db.Pool.QueryRow(context.Background(), query, userID, utils.EmptyToNull(speciesLSID), unverifiedScientific, unverifiedCommon, sex, size, ageInDays, description, imageURL, breedingType, loanFee).Scan(&listingID)
 
 	if err != nil {
 		utils.SendError(c, http.StatusInternalServerError, "Failed to create breeding listing", nil)
@@ -384,17 +398,26 @@ func DeleteBreedingListing(c *gin.Context) {
 }
 
 func GetBreedingListingDetails(c *gin.Context) {
+	userID, _ := c.Get("userID")
 	id := c.DefaultPostForm("id", c.Query("id"))
 	if id == "" {
 		utils.SendError(c, http.StatusBadRequest, "ID missing", nil)
 		return
 	}
 
-	query := `SELECT bl.*, t.genus, t.species, t.subspecies, t.common_name, t.distribution,
+	query := `SELECT bl.id, bl.seller_id, bl.species_lsid, bl.sex, bl.size_in_cm, bl.age, bl.description, bl.image_url,
+                     bl.breeding_type, bl.loan_fee, bl.status, bl.listed_time,
+                     COALESCE(t.genus, ''), COALESCE(t.species, ''), t.subspecies,
+                     COALESCE(t.common_name, bl.unverified_common_name) as common_name,
+                     t.distribution,
                      u.username as seller_name, u.public_key as seller_public_key,
-                     u.whatsapp, u.facebook, u.instagram
+                     u.whatsapp, u.facebook, u.instagram,
+                     (SELECT COUNT(*) FROM breeding_impressions WHERE listing_id = bl.id) as view_count,
+                     bl.unverified_scientific_name,
+                     (bl.species_lsid IS NULL) as is_unverified_scientific,
+                     (t.common_name IS NULL AND bl.unverified_common_name IS NOT NULL) as is_unverified_common
               FROM breeding_listings bl
-              JOIN taxa t ON bl.species_lsid = t.species_lsid
+              LEFT JOIN taxa t ON bl.species_lsid = t.species_lsid
               JOIN users u ON bl.seller_id = u.id
               WHERE bl.id = $1`
 
@@ -407,22 +430,33 @@ func GetBreedingListingDetails(c *gin.Context) {
 		distribution, desc, sizeInCm                                    *string
 		commonName, whatsapp, facebook, instagram                       *string
 		loanFee                                                         *float64
-		ageInDays                                                       *int
+		ageInDays, viewCount                                            *int
+		unverifiedScientific                                            *string
 		listedTime                                                      time.Time
+		isUnverifiedScientific, isUnverifiedCommon                      bool
 	)
 
 	err := db.Pool.QueryRow(context.Background(), query, id).Scan(
 		&listingID, &sellerID, &speciesLSID, &sex, &sizeInCm, &ageInDays, &desc, &imageURL,
 		&breedingType, &loanFee, &status, &listedTime, &genus, &species, &subspecies,
-		&commonName, &distribution, &sellerName, &sellerPublicKey, &whatsapp, &facebook, &instagram,
+		&commonName, &distribution, &sellerName, &sellerPublicKey, &whatsapp, &facebook, &instagram, &viewCount,
+		&unverifiedScientific, &isUnverifiedScientific, &isUnverifiedCommon,
 	)
 
 	if err != nil {
+		fmt.Printf("GetBreedingListingDetails Error: %v\n", err)
 		utils.SendError(c, http.StatusNotFound, "Breeding listing not found", nil)
 		return
 	}
 
+	if sellerID != fmt.Sprintf("%v", userID) {
+		db.LogImpressions(context.Background(), fmt.Sprintf("%v", userID), []int64{int64(listingID)}, "breeding_impressions")
+	}
+
 	scientificName := strings.TrimSpace(fmt.Sprintf("%s %s %s", genus, species, subspecies))
+	if scientificName == "" && unverifiedScientific != nil {
+		scientificName = *unverifiedScientific
+	}
 	displayCommonName := scientificName
 	if commonName != nil && *commonName != "" {
 		displayCommonName = *commonName
@@ -460,6 +494,9 @@ func GetBreedingListingDetails(c *gin.Context) {
 		"facebook":          facebook,
 		"instagram":         instagram,
 		"species_lsid":      speciesLSID,
+		"view_count":        viewCount,
+		"is_unverified_scientific": isUnverifiedScientific,
+		"is_unverified_common":     isUnverifiedCommon,
 	})
 }
 

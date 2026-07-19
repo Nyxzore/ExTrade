@@ -31,8 +31,8 @@ func GetAllListings(c *gin.Context) {
         SELECT l.id,
                l.seller_id,
                u.username as seller_name,
-               TRIM(CONCAT_WS(' ', t.genus, t.species, t.subspecies)) as scientific_name,
-               t.common_name,
+               COALESCE(TRIM(CONCAT_WS(' ', t.genus, t.species, t.subspecies)), l.unverified_scientific_name) as scientific_name,
+               COALESCE(t.common_name, l.unverified_common_name) as common_name,
                l.price,
                l.description,
                l.image_url,
@@ -43,6 +43,8 @@ func GetAllListings(c *gin.Context) {
                u.whatsapp,
                u.facebook,
                u.instagram,
+               (l.species_lsid IS NULL) as is_unverified_scientific,
+               (t.common_name IS NULL AND l.unverified_common_name IS NOT NULL) as is_unverified_common,
                (((CASE COALESCE(u.subscription_tier, 0)
                     WHEN 2 THEN 5
                     WHEN 1 THEN 2
@@ -56,14 +58,14 @@ func GetAllListings(c *gin.Context) {
                         END)))
                / POWER(1 + COALESCE(ic.times_shown_recently, 0), 0.15))
                * (CASE WHEN $2::text != '' -- FIX 2: Check for empty string instead of IS NOT NULL
-                       THEN (POWER(similarity(COALESCE(t.common_name, ''), $2::text), 3) * 50.0 + 1.0) -- FIX 3: Coalesce common_name to prevent similarity(NULL)
+                       THEN (POWER(similarity(COALESCE(t.common_name, l.unverified_common_name, ''), $2::text), 3) * 50.0 + 1.0) -- FIX 3: Coalesce common_name to prevent similarity(NULL)
                        ELSE 1.0
                   END) as exposure_score
         FROM listings l
-        JOIN taxa t ON l.species_lsid = t.species_lsid
+        LEFT JOIN taxa t ON l.species_lsid = t.species_lsid
         JOIN users u ON l.seller_id = u.id
         LEFT JOIN impression_counts ic ON ic.listing_id = l.id
-        WHERE l.status = 'active'`
+        WHERE l.status = 'active' AND l.seller_id != $1`
 
 	params := []any{userID, search, seed}
 	paramCount := 4
@@ -107,12 +109,13 @@ func GetAllListings(c *gin.Context) {
 			commonName, whatsapp, facebook, instagram                   *string
 			price                                                       *float64
 			listedTime                                                  time.Time
+			isUnverifiedScientific, isUnverifiedCommon                  bool
 			exposureScore, probability                                  float64
 		)
 
 		if err := rows.Scan(&id, &sellerID, &sellerName, &scientificName, &commonName, &price,
 			&description, &imageURL, &sex, &status, &listedTime, &subscriptionTier,
-			&whatsapp, &facebook, &instagram, &exposureScore, &probability); err != nil {
+			&whatsapp, &facebook, &instagram, &isUnverifiedScientific, &isUnverifiedCommon, &exposureScore, &probability); err != nil {
 			// FIX 5: Print the error so you can see exactly which column is failing if it happens again
 			fmt.Printf("Row scan error for listing ID %d: %v\n", id, err)
 			continue
@@ -129,23 +132,25 @@ func GetAllListings(c *gin.Context) {
 		}
 
 		listings = append(listings, map[string]any{
-			"id":                id,
-			"seller_id":         sellerID,
-			"seller_name":       sellerName,
-			"scientific_name":   scientificName,
-			"common_name":       displayCommonName,
-			"price":             priceDisplay,
-			"description":       description,
-			"image_url":         imageURL,
-			"sex":               sex,
-			"status":            status,
-			"listed_time":       listedTime,
-			"exposure_score":    exposureScore,
-			"probability":       probability,
-			"subscription_tier": subscriptionTier,
-			"whatsapp":          whatsapp,
-			"facebook":          facebook,
-			"instagram":         instagram,
+			"id":                       id,
+			"seller_id":                sellerID,
+			"seller_name":              sellerName,
+			"scientific_name":          scientificName,
+			"common_name":              displayCommonName,
+			"price":                    priceDisplay,
+			"description":              description,
+			"image_url":                imageURL,
+			"sex":                      sex,
+			"status":                   status,
+			"listed_time":              listedTime,
+			"exposure_score":           exposureScore,
+			"probability":              probability,
+			"subscription_tier":        subscriptionTier,
+			"whatsapp":                 whatsapp,
+			"facebook":                 facebook,
+			"instagram":                instagram,
+			"is_unverified_scientific": isUnverifiedScientific,
+			"is_unverified_common":     isUnverifiedCommon,
 		})
 		ids = append(ids, int64(id))
 	}
@@ -162,14 +167,23 @@ func CreateListing(c *gin.Context) {
 	userID, _ := c.Get("userID")
 
 	speciesLSID := c.PostForm("species_lsid")
+	unverifiedScientific := c.PostForm("unverified_scientific_name")
+	unverifiedCommon := c.PostForm("unverified_common_name")
 	priceStr := c.PostForm("price")
 	description := c.DefaultPostForm("description", "")
 	sex := c.DefaultPostForm("sex", "Unsexed")
 	imageBase64 := c.PostForm("image_data")
 
-	if speciesLSID == "" || priceStr == "" {
+	if (speciesLSID == "" && unverifiedScientific == "") || priceStr == "" {
 		utils.SendError(c, http.StatusBadRequest, "Required fields missing", nil)
 		return
+	}
+
+	// Log unverified common name if provided
+	if unverifiedCommon != "" {
+		db.Pool.Exec(context.Background(),
+			"INSERT INTO user_common_names (scientific_name, common_name, user_id) VALUES ($1, $2, $3)",
+			unverifiedScientific, unverifiedCommon, userID)
 	}
 
 	price, err := strconv.ParseFloat(priceStr, 64)
@@ -181,9 +195,9 @@ func CreateListing(c *gin.Context) {
 	imageURL, _ := utils.SaveBase64Image(imageBase64, "listings")
 
 	var listingID int
-	query := `INSERT INTO listings (seller_id, species_lsid, price, description, sex, image_url)
-              VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
-	err = db.Pool.QueryRow(context.Background(), query, userID, speciesLSID, price, description, sex, imageURL).Scan(&listingID)
+	query := `INSERT INTO listings (seller_id, species_lsid, unverified_scientific_name, unverified_common_name, price, description, sex, image_url)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
+	err = db.Pool.QueryRow(context.Background(), query, userID, utils.EmptyToNull(speciesLSID), unverifiedScientific, unverifiedCommon, price, description, sex, imageURL).Scan(&listingID)
 
 	if err != nil {
 		utils.SendError(c, http.StatusInternalServerError, "Failed to create listing", nil)
@@ -301,16 +315,22 @@ func GetListingDetails(c *gin.Context) {
                u.username as seller_name,
                u.subscription_tier,
                u.whatsapp, u.facebook, u.instagram,
-               t.genus, t.species, t.subspecies, t.common_name, t.distribution
+               COALESCE(t.genus, ''), COALESCE(t.species, ''), t.subspecies,
+               COALESCE(t.common_name, l.unverified_common_name) as common_name,
+               t.distribution,
+               (SELECT COUNT(*) FROM listing_impressions WHERE listing_id = l.id) as view_count,
+               l.unverified_scientific_name,
+               (l.species_lsid IS NULL) as is_unverified_scientific,
+               (t.common_name IS NULL AND l.unverified_common_name IS NOT NULL) as is_unverified_common
         FROM listings l
         JOIN users u ON l.seller_id = u.id
-        JOIN taxa t ON l.species_lsid = t.species_lsid
+        LEFT JOIN taxa t ON l.species_lsid = t.species_lsid
         WHERE l.id = $1`
 
 	row := db.Pool.QueryRow(context.Background(), query, listingID)
 
 	var (
-		id, subscriptionTier                               int
+		id, subscriptionTier, viewCount                    int
 		sellerID, speciesLSID, sellerName                  string
 		desc, imageURL                                     *string
 		sex, status, genus, species                        string
@@ -319,10 +339,13 @@ func GetListingDetails(c *gin.Context) {
 		price                                              *float64
 		listedTime                                         time.Time
 		age, sizeInCm                                      *int
+		unverifiedScientific                               *string
+		isUnverifiedScientific, isUnverifiedCommon         bool
 	)
 
 	err := row.Scan(&id, &sellerID, &speciesLSID, &price, &desc, &imageURL, &sex, &status, &listedTime, &age, &sizeInCm,
-		&sellerName, &subscriptionTier, &whatsapp, &facebook, &instagram, &genus, &species, &subspecies, &commonName, &distrib)
+		&sellerName, &subscriptionTier, &whatsapp, &facebook, &instagram, &genus, &species, &subspecies, &commonName, &distrib,
+		&viewCount, &unverifiedScientific, &isUnverifiedScientific, &isUnverifiedCommon)
 
 	if err != nil {
 		fmt.Printf("Database error in GetListingDetails: %v\n", err)
@@ -330,9 +353,14 @@ func GetListingDetails(c *gin.Context) {
 		return
 	}
 
-	db.LogImpressions(context.Background(), fmt.Sprintf("%v", userID), []int64{int64(id)}, "listing_impressions")
+	if sellerID != fmt.Sprintf("%v", userID) {
+		db.LogImpressions(context.Background(), fmt.Sprintf("%v", userID), []int64{int64(id)}, "listing_impressions")
+	}
 
 	scientificName := strings.TrimSpace(fmt.Sprintf("%s %s %s", genus, species, utils.DerefString(subspecies)))
+	if scientificName == "" && unverifiedScientific != nil {
+		scientificName = *unverifiedScientific
+	}
 	displayCommonName := scientificName
 	if commonName != nil && *commonName != "" {
 		displayCommonName = *commonName
@@ -366,8 +394,11 @@ func GetListingDetails(c *gin.Context) {
 		"species":           species,
 		"subspecies":        subspecies,
 		"scientific_name":   scientificName,
-		"common_name":       displayCommonName,
-		"distribution":      distrib,
+		"common_name":              displayCommonName,
+		"distribution":             distrib,
+		"view_count":               viewCount,
+		"is_unverified_scientific": isUnverifiedScientific,
+		"is_unverified_common":     isUnverifiedCommon,
 	})
 }
 

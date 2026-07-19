@@ -26,6 +26,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.boolean
 
 /**
  * Detailed view of a specific animal listing.
@@ -240,12 +242,38 @@ class ListingDetails : AppCompatActivity() {
                 val description = getString("description")
                 binding.lblDescription.text = if (description.isEmpty()) "None" else description
 
-                currentStatus = status
                 currentImageUrl = getString("image_url")
                 sellerId = getString("seller_id")
                 sellerWhatsApp = getString("whatsapp")
                 sellerFacebook = getString("facebook")
                 sellerInstagram = getString("instagram")
+
+                val isUnverifiedSci = json["is_unverified_scientific"]?.jsonPrimitive?.boolean ?: false
+                val isUnverifiedCom = json["is_unverified_common"]?.jsonPrimitive?.boolean ?: false
+
+                if (isUnverifiedSci || isUnverifiedCom) {
+                    binding.imgUnverified.visibility = View.VISIBLE
+                    binding.imgUnverified.setOnClickListener {
+                        val msg = if (isUnverifiedSci) "Unverified scientific name/species" else "Unverified common name"
+                        androidx.appcompat.app.AlertDialog.Builder(this@ListingDetails)
+                            .setTitle("Verification Status")
+                            .setMessage(msg)
+                            .setPositiveButton("OK", null)
+                            .show()
+                    }
+                } else {
+                    binding.imgUnverified.visibility = View.GONE
+                }
+
+                val viewCount = json["view_count"]?.jsonPrimitive?.int ?: 0
+                val owner = sellerId?.equals(session.getUserUUID(), ignoreCase = true) == true
+
+                if (owner) {
+                    binding.lblViewCount.visibility = View.VISIBLE
+                    binding.lblViewCount.text = "$viewCount views"
+                } else {
+                    binding.lblViewCount.visibility = View.GONE
+                }
 
                 SocialLinkUtils.bindProfileIcons(
                     this@ListingDetails,
@@ -260,7 +288,7 @@ class ListingDetails : AppCompatActivity() {
                 )
 
                 // Update buttons
-                val isOwner = sellerId?.equals(session.getUserUUID(), ignoreCase = true) == true
+                val isOwner = owner
                 if (isOwner) {
                     binding.btnContactSeller.visibility = View.GONE
                     if ("active" == status) {

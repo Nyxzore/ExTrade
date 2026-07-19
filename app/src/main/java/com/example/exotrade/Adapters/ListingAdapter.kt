@@ -85,6 +85,20 @@ class ListingAdapter(
 
                 lblSoldBadge.visibility = if (listing.status == "sold") View.VISIBLE else View.GONE
 
+                if (listing.isUnverifiedScientific || listing.isUnverifiedCommon) {
+                    imgUnverified.visibility = View.VISIBLE
+                    imgUnverified.setOnClickListener {
+                        val msg = if (listing.isUnverifiedScientific) "Unverified scientific name/species" else "Unverified common name"
+                        androidx.appcompat.app.AlertDialog.Builder(itemView.context)
+                            .setTitle("Verification Status")
+                            .setMessage(msg)
+                            .setPositiveButton("OK", null)
+                            .show()
+                    }
+                } else {
+                    imgUnverified.visibility = View.GONE
+                }
+
                 val cardRoot = root as com.google.android.material.card.MaterialCardView
                 if (listing.subscriptionTier >= 1) {
                     cardRoot.strokeWidth = Helpers.dpToPx(itemView.context, 1)

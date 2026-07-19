@@ -49,6 +49,26 @@ func InitDB() error {
 		return fmt.Errorf("failed to create password_resets table: %v", err)
 	}
 
+	// Unverified species system
+	_, err = Pool.Exec(context.Background(), `
+		CREATE TABLE IF NOT EXISTS user_common_names (
+			id SERIAL PRIMARY KEY,
+			scientific_name TEXT,
+			common_name TEXT,
+			user_id UUID REFERENCES users(id),
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+		);
+
+		ALTER TABLE listings ADD COLUMN IF NOT EXISTS unverified_scientific_name TEXT;
+		ALTER TABLE listings ADD COLUMN IF NOT EXISTS unverified_common_name TEXT;
+
+		ALTER TABLE breeding_listings ADD COLUMN IF NOT EXISTS unverified_scientific_name TEXT;
+		ALTER TABLE breeding_listings ADD COLUMN IF NOT EXISTS unverified_common_name TEXT;
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to update schema for unverified names: %v", err)
+	}
+
 	return nil
 }
 

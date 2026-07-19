@@ -20,5 +20,7 @@ data class Listing(
     val facebook: String? = null,
     val instagram: String? = null,
     @SerialName("listed_time") val listedTime: String? = null,
-    val probability: Double = 0.0
+    val probability: Double = 0.0,
+    @SerialName("is_unverified_scientific") val isUnverifiedScientific: Boolean = false,
+    @SerialName("is_unverified_common") val isUnverifiedCommon: Boolean = false
 )
