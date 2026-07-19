@@ -86,6 +86,7 @@ func main() {
 			protected.POST("/messaging/start_or_get_conversation", handlers.StartOrGetConversation)
 			protected.POST("/messaging/get_backup", handlers.GetBackup)
 			protected.POST("/messaging/send_message", handlers.SendMessage)
+			protected.POST("/messaging/upload_attachment", handlers.UploadAttachment)
 
 			// Notifications (User-facing but in admin/ folder in legacy)
 			protected.GET("/admin/get_notifications", handlers.GetNotifications)
@@ -106,7 +107,7 @@ func main() {
 	// Static files fallback (avoids wildcard conflicts)
 	r.NoRoute(func(c *gin.Context) {
 		path := c.Request.URL.Path
-		for _, dir := range []string{"listings", "profile_pics", "downloads"} {
+		for _, dir := range []string{"listings", "profile_pics", "downloads", "chat_attachments"} {
 			if strings.HasPrefix(path, "/"+dir+"/") {
 				file := filepath.Join(".", path)
 				if _, err := os.Stat(file); err == nil {

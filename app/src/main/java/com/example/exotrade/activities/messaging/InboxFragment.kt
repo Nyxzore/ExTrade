@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.exotrade.Adapters.ConversationAdapter
 import com.example.exotrade.Adapters.FriendAdapter
 import com.example.exotrade.ExoTradeApplication
@@ -86,6 +87,14 @@ class InboxFragment : Fragment() {
         })
         binding.rvSearchResults.adapter = searchAdapter
 
+        binding.toolbar.inflateMenu(R.menu.menu_inbox)
+        binding.toolbar.setOnMenuItemClickListener {
+            if (it.itemId == R.id.action_friends) {
+                showFriendsSideSheet()
+                true
+            } else false
+        }
+
         binding.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -153,6 +162,51 @@ class InboxFragment : Fragment() {
                 Toast.makeText(requireContext(), "Could not open chat", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private fun showFriendsSideSheet() {
+        val sideSheetDialog = com.google.android.material.sidesheet.SideSheetDialog(requireContext())
+        val sideSheetView = layoutInflater.inflate(R.layout.msg_sheet_friends, null)
+        sideSheetDialog.setContentView(sideSheetView)
+
+        val rvFriends = sideSheetView.findViewById<RecyclerView>(R.id.rvFriends)
+        rvFriends.layoutManager = LinearLayoutManager(requireContext())
+
+        val friendsAdapter = FriendAdapter(ArrayList(), FriendAdapter.Mode.FRIENDS, object : FriendAdapter.OnFriendActionListener {
+            override fun onUserClick(user: User) {
+                openConversationWith(user)
+                sideSheetDialog.dismiss()
+            }
+            override fun onActionClick(user: User) {}
+            override fun onDeclineClick(user: User) {}
+        })
+        rvFriends.adapter = friendsAdapter
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response: String = ExoTradeApplication.container.apiService.postForm("friends/get_friends", session.authParams())
+                val json = Json.parseToJsonElement(response).jsonObject
+                if ("success" == json["status"]?.jsonPrimitive?.content) {
+                    val arr = json["friends"]?.jsonArray
+                    val list = ArrayList<User>()
+                    arr?.forEach { element ->
+                        val u = element.jsonObject
+                        val picEl = u["profile_pic"]
+                        list.add(
+                            User(
+                                id = u["id"]?.jsonPrimitive?.content,
+                                username = u["username"]?.jsonPrimitive?.content,
+                                profilePic = if (picEl == null || picEl is JsonNull) null else picEl.jsonPrimitive.content,
+                                subscriptionTier = u["subscription_tier"]?.jsonPrimitive?.int ?: 0
+                            )
+                        )
+                    }
+                    friendsAdapter.setUsers(list)
+                }
+            } catch (ignored: Exception) {}
+        }
+
+        sideSheetDialog.show()
     }
 
     private fun searchUsers(query: String) {

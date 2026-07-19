@@ -18,13 +18,11 @@ object ImageUtils {
      * @param bitmap The raw source Bitmap.
      * @return Base64 encoded string of the compressed JPEG, or null if input is null.
      */
-    fun compressAndEncode(bitmap: Bitmap?): String? {
+    fun compressAndEncode(bitmap: Bitmap?, maxDimension: Int = 1024): String? {
         if (bitmap == null) return null
 
-        // 1. Resize: Capping at 1024px for the largest dimension
-        val maxWidth = 1024
-        val maxHeight = 1024
-        val ratio = Math.min(maxWidth.toFloat() / bitmap.width, maxHeight.toFloat() / bitmap.height)
+        // 1. Resize: Capping at maxDimension for the largest dimension
+        val ratio = Math.min(maxDimension.toFloat() / bitmap.width, maxDimension.toFloat() / bitmap.height)
         
         val resized = if (ratio < 1.0f) {
             val newWidth = Math.round(ratio * bitmap.width)

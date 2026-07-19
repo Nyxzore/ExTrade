@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.exotrade.models.Message
 import com.example.exotrade.R
 import com.example.exotrade.databinding.MsgItemMessageListingBinding
+import com.example.exotrade.databinding.MsgItemMessageMediaBinding
 import com.example.exotrade.databinding.MsgItemMessageReceivedBinding
 import com.example.exotrade.databinding.MsgItemMessageSentBinding
 import com.example.exotrade.utils.Helpers
@@ -40,15 +41,19 @@ class MessageAdapter(
         return when (viewType) {
             TYPE_LISTING -> MessageViewHolder.ListingViewHolder(MsgItemMessageListingBinding.inflate(inflater, parent, false))
             TYPE_SENT -> MessageViewHolder.SentViewHolder(MsgItemMessageSentBinding.inflate(inflater, parent, false))
+            TYPE_IMAGE -> MessageViewHolder.MediaViewHolder(MsgItemMessageMediaBinding.inflate(inflater, parent, false))
             else -> MessageViewHolder.ReceivedViewHolder(MsgItemMessageReceivedBinding.inflate(inflater, parent, false))
         }
     }
 
     override fun getItemViewType(position: Int): Int {
         val message = getItem(position)
-        return if (message.isListingRef) TYPE_LISTING
-        else if (message.senderId == currentUserId) TYPE_SENT
-        else TYPE_RECEIVED
+        return when {
+            message.isListingRef -> TYPE_LISTING
+            message.isImageRef -> TYPE_IMAGE
+            message.senderId == currentUserId -> TYPE_SENT
+            else -> TYPE_RECEIVED
+        }
     }
 
     override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
@@ -175,12 +180,35 @@ class MessageAdapter(
                 listingCard?.findViewById<View>(R.id.lblSoldBadge)?.visibility = View.GONE
             }
         }
+
+        class MediaViewHolder(private val binding: MsgItemMessageMediaBinding) : MessageViewHolder(binding.root) {
+            override fun bind(message: Message, previous: Message?, userClickListener: OnUserClickListener) {
+                val showHeader = shouldShowHeader(message, previous)
+                binding.headerContainer.visibility = if (showHeader) View.VISIBLE else View.GONE
+                binding.imgSender.visibility = if (showHeader) View.VISIBLE else View.GONE
+                updateMarginsAndPadding(binding.root, showHeader)
+                if (showHeader) bindHeader(message, binding.lblUsername, binding.lblTime, binding.imgSender, userClickListener)
+
+                val url = message.attachmentUrl
+                Helpers.loadImage(url, binding.imgContent)
+
+                binding.imgContent.setOnClickListener {
+                    val dialog = android.app.Dialog(itemView.context, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+                    val iv = android.widget.ImageView(itemView.context)
+                    iv.scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
+                    Helpers.loadImage(url, iv)
+                    dialog.setContentView(iv)
+                    dialog.show()
+                }
+            }
+        }
     }
 
     companion object {
         const val TYPE_SENT = 1
         const val TYPE_RECEIVED = 2
         const val TYPE_LISTING = 3
+        const val TYPE_IMAGE = 4
 
         private val DIFF_CALLBACK = object : DiffUtil.ItemCallback<Message>() {
             override fun areItemsTheSame(oldItem: Message, newItem: Message): Boolean {

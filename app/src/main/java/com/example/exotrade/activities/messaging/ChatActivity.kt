@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.util.Base64
 import android.view.View
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import com.example.exotrade.activities.BaseActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -36,6 +37,14 @@ class ChatActivity : BaseActivity(), MessageAdapter.OnUserClickListener {
     private var messages = mutableListOf<Message>()
     private var pollJob: Job? = null
     private var lastId = "0"
+
+    private val imagePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: android.net.Uri? ->
+        if (uri != null) {
+            uploadAndSendImage(uri)
+        }
+    }
 
     // Staged listing info
     private var stagedLId: String? = null
@@ -70,6 +79,7 @@ class ChatActivity : BaseActivity(), MessageAdapter.OnUserClickListener {
         binding.rvMessages.adapter = adapter
 
         binding.btnSend.setOnClickListener { sendMessage() }
+        binding.btnAttach.setOnClickListener { imagePickerLauncher.launch("image/*") }
 
         // Hide bottom nav for chat thread
         findViewById<View>(R.id.bottomNavigation)?.visibility = View.GONE
@@ -156,6 +166,26 @@ class ChatActivity : BaseActivity(), MessageAdapter.OnUserClickListener {
                                 senderUsername = m["sender_username"]?.jsonPrimitive?.content,
                                 senderSubscriptionTier = m["sender_subscription_tier"]?.jsonPrimitive?.int ?: 0
                             )
+
+                            Message.parseRef(body)?.let { ref ->
+                                when (ref) {
+                                    is Message.ParsedRef.Listing -> {
+                                        msg.isListingRef = true
+                                        msg.listingId = ref.id
+                                        msg.listingCommonName = ref.common
+                                        msg.listingScientificName = ref.scientific
+                                        msg.listingPrice = ref.price
+                                        msg.listingImageUrl = ref.imageUrl
+                                        msg.messageText = null
+                                    }
+                                    is Message.ParsedRef.Image -> {
+                                        msg.isImageRef = true
+                                        msg.attachmentUrl = ref.url
+                                        msg.messageText = null
+                                    }
+                                }
+                            }
+
                             newMessages.add(msg)
                             msg.id?.let { lastId = it }
                         }
@@ -178,7 +208,6 @@ class ChatActivity : BaseActivity(), MessageAdapter.OnUserClickListener {
                 }
             } catch (e: Exception) {
                 android.util.Log.e("ChatActivity", "fetchMessages failed", e)
-                // Handle error
             }
         }
     }
@@ -235,14 +264,14 @@ class ChatActivity : BaseActivity(), MessageAdapter.OnUserClickListener {
         }
 
         val optimisticMsg = Message(
-            "temp_${System.currentTimeMillis()}",
-            cid,
-            session.getUserUUID(),
-            text,
-            "Just now",
-            session.getProfilePic(),
-            session.getUsername(),
-            false
+            id = "temp_${System.currentTimeMillis()}",
+            conversationId = cid,
+            senderId = session.getUserUUID(),
+            messageText = text,
+            sentAt = "Just now",
+            senderProfilePic = session.getProfilePic(),
+            senderUsername = session.getUsername(),
+            senderSubscriptionTier = session.getSubscriptionTier()
         ).apply {
             isSending = true
         }
@@ -323,6 +352,97 @@ class ChatActivity : BaseActivity(), MessageAdapter.OnUserClickListener {
                 ExoTradeApplication.container.apiService.postForm<String>("messaging/mark_read", params)
             } catch (e: Exception) {
                 android.util.Log.e("ChatActivity", "markAsRead failed", e)
+            }
+        }
+    }
+
+    private fun uploadAndSendImage(uri: android.net.Uri) {
+        val cid = conversationId ?: return
+
+        val optimisticMsg = Message(
+            id = "temp_img_${System.currentTimeMillis()}",
+            conversationId = cid,
+            senderId = session.getUserUUID(),
+            messageText = null,
+            sentAt = "Just now",
+            senderProfilePic = session.getProfilePic(),
+            senderUsername = session.getUsername(),
+            senderSubscriptionTier = session.getSubscriptionTier()
+        ).apply {
+            isSending = true
+            isImageRef = true
+            attachmentUrl = uri.toString()
+        }
+
+        messages.add(optimisticMsg)
+        adapter.submitList(ArrayList(messages))
+        binding.rvMessages.smoothScrollToPosition(messages.size - 1)
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val inputStream = contentResolver.openInputStream(uri)
+                val bitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
+                val base64 = com.example.exotrade.utils.ImageUtils.compressAndEncode(bitmap, 1600)
+
+                if (base64 == null) {
+                    withContext(Dispatchers.Main) {
+                        messages.remove(optimisticMsg)
+                        adapter.submitList(ArrayList(messages))
+                        Toast.makeText(this@ChatActivity, "Failed to process image", Toast.LENGTH_SHORT).show()
+                    }
+                    return@launch
+                }
+
+                val params = session.authParams().toMutableMap()
+                params["image_data"] = base64
+
+                val response = ExoTradeApplication.container.apiService.postForm<String>("messaging/upload_attachment", params)
+                val json = Json.parseToJsonElement(response).jsonObject
+
+                if (json["status"]?.jsonPrimitive?.content == "success") {
+                    val url = json["url"]?.jsonPrimitive?.content ?: ""
+                    val imageRef = Message.createImageRef(url)
+
+                    val encryptionManager = ExoTradeApplication.container.encryptionManager
+                    val myPrivKeyBase64 = session.getIdentityPrivateKey() ?: return@launch
+                    val myPrivKey = Base64.decode(myPrivKeyBase64, Base64.NO_WRAP)
+
+                    val result = encryptionManager.encryptMessage(imageRef, otherPublicKey ?: "", myPrivKey)
+
+                    val sendParams = session.authParams().toMutableMap()
+                    sendParams["conversation_id"] = cid
+                    sendParams["body"] = result.ciphertext
+                    sendParams["nonce"] = result.nonce
+
+                    val sendResponse = ExoTradeApplication.container.apiService.postForm<String>("messaging/send_message", sendParams)
+                    val sendJson = Json.parseToJsonElement(sendResponse).jsonObject
+
+                    withContext(Dispatchers.Main) {
+                        if (sendJson["status"]?.jsonPrimitive?.content == "success") {
+                            optimisticMsg.isSending = false
+                            optimisticMsg.id = sendJson["message_id"]?.jsonPrimitive?.content
+                            optimisticMsg.sentAt = sendJson["sent_at"]?.jsonPrimitive?.content
+                            optimisticMsg.attachmentUrl = url
+                            adapter.notifyItemChanged(messages.indexOf(optimisticMsg))
+                        } else {
+                            messages.remove(optimisticMsg)
+                            adapter.submitList(ArrayList(messages))
+                            Toast.makeText(this@ChatActivity, "Failed to send image", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        messages.remove(optimisticMsg)
+                        adapter.submitList(ArrayList(messages))
+                        Toast.makeText(this@ChatActivity, "Failed to upload image", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    messages.remove(optimisticMsg)
+                    adapter.submitList(ArrayList(messages))
+                    Toast.makeText(this@ChatActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }

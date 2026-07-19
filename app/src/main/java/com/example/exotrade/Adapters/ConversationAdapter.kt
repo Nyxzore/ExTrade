@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.exotrade.models.Conversation
+import com.example.exotrade.models.Message
 import com.example.exotrade.R
 import com.example.exotrade.databinding.MsgItemConversationBinding
 import com.example.exotrade.utils.Helpers
@@ -53,25 +54,20 @@ class ConversationAdapter(private val listener: OnConversationClickListener) :
                 lblUsername.text = conversation.otherUsername
 
                 val lastMsg = conversation.lastMessage
-                if (lastMsg != null && lastMsg.startsWith("[LISTING_REF:") && lastMsg.endsWith("]")) {
-                    try {
-                        val json = JSONObject(lastMsg.substring(13, lastMsg.length - 1))
-                        val rawName = json.optString("common_name", "")
-                        val listingName = if (rawName.isEmpty() || rawName == "null") {
-                            json.optString("scientific_name", "Animal")
-                        } else rawName
+                val ref = if (lastMsg != null) Message.parseRef(lastMsg) else null
 
-                        lblLastMessage.text = itemView.context.getString(R.string.shared_listing_preview, listingName)
+                if (ref != null) {
+                    lblLastMessage.text = ref.getShortLabel()
 
-                        val thumbUrl = json.optString("image_url", "")
-                        if (thumbUrl.isNotEmpty() && thumbUrl != "null") {
-                            imgListingThumbnail.visibility = View.VISIBLE
-                            Helpers.loadImage(thumbUrl, imgListingThumbnail)
-                        } else {
-                            imgListingThumbnail.visibility = View.GONE
-                        }
-                    } catch (e: Exception) {
-                        lblLastMessage.setText(R.string.shared_a_listing)
+                    val thumbUrl = when (ref) {
+                        is Message.ParsedRef.Listing -> ref.imageUrl
+                        is Message.ParsedRef.Image -> ref.url
+                    }
+
+                    if (!thumbUrl.isNullOrEmpty() && thumbUrl != "null") {
+                        imgListingThumbnail.visibility = View.VISIBLE
+                        Helpers.loadImage(thumbUrl, imgListingThumbnail)
+                    } else {
                         imgListingThumbnail.visibility = View.GONE
                     }
                 } else {

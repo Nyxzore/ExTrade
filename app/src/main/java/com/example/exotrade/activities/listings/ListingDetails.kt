@@ -265,7 +265,12 @@ class ListingDetails : AppCompatActivity() {
                     binding.btnContactSeller.visibility = View.GONE
                     if ("active" == status) {
                         binding.btnMarkSold.visibility = View.VISIBLE
+                        binding.btnMarkSold.text = "Mark as Sold"
                         binding.btnMarkSold.setOnClickListener { markAsSold(getString("id")) }
+                    } else if ("sold" == status) {
+                        binding.btnMarkSold.visibility = View.VISIBLE
+                        binding.btnMarkSold.text = "Mark as Available"
+                        binding.btnMarkSold.setOnClickListener { markAsAvailable(getString("id")) }
                     } else {
                         binding.btnMarkSold.visibility = View.GONE
                     }
@@ -288,16 +293,24 @@ class ListingDetails : AppCompatActivity() {
     }
 
     private fun markAsSold(listingId: String) {
+        updateListingStatus(listingId, "sold", "Marked as SOLD")
+    }
+
+    private fun markAsAvailable(listingId: String) {
+        updateListingStatus(listingId, "active", "Marked as available")
+    }
+
+    private fun updateListingStatus(listingId: String, status: String, successMessage: String) {
         val params = session.authParams().toMutableMap()
         params["listing_id"] = listingId
-        params["status"] = "sold"
+        params["status"] = status
 
         lifecycleScope.launch {
             try {
                 val response: String = ExoTradeApplication.container.apiService.postForm("listings/update_listing", params)
                 val json = Json.parseToJsonElement(response).jsonObject
                 if ("success" == json["status"]?.jsonPrimitive?.contentOrNull) {
-                    Toast.makeText(this@ListingDetails, "Marked as SOLD", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@ListingDetails, successMessage, Toast.LENGTH_SHORT).show()
                     fetchListingDetails(listingId)
                 } else {
                     Toast.makeText(this@ListingDetails, json["message"]?.jsonPrimitive?.contentOrNull, Toast.LENGTH_SHORT).show()

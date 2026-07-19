@@ -241,6 +241,20 @@ func MarkRead(c *gin.Context) {
 	utils.SendSuccess(c, "Messages marked as read", nil)
 }
 
+func UploadAttachment(c *gin.Context) {
+	imageBase64 := c.PostForm("image_data")
+	if imageBase64 == "" {
+		utils.SendError(c, http.StatusBadRequest, "No image provided", nil)
+		return
+	}
+	url, err := utils.SaveBase64Image(imageBase64, "chat_attachments")
+	if err != nil || url == "" {
+		utils.SendError(c, http.StatusBadRequest, "Failed to upload image", nil)
+		return
+	}
+	utils.SendSuccess(c, "Attachment uploaded", map[string]any{"url": url})
+}
+
 func StartOrGetConversation(c *gin.Context) {
 	userIDVal, _ := c.Get("userID")
 	userID, _ := userIDVal.(string)
