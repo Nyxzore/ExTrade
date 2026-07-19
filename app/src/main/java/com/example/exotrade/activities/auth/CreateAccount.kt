@@ -162,7 +162,10 @@ class CreateAccount : AppCompatActivity() {
                     )
 
                     pendingIdentityKeys?.let {
-                        session.saveIdentityKeys(it.first, Base64.encodeToString(it.second, Base64.NO_WRAP))
+                        session.saveIdentityKeys(
+                            privateKey = Base64.encodeToString(it.second, Base64.NO_WRAP),
+                            publicKey = it.first
+                        )
                     }
 
                     ExoTradeApplication.container.speciesRepository.syncFromServer(false)

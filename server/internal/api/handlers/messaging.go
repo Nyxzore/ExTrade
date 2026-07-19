@@ -151,14 +151,14 @@ func GetMessages(c *gin.Context) {
 	var query string
 	var params []any
 	if sinceID != "" {
-		query = `SELECT m.*, u.profile_picture as sender_profile_pic, u.username as sender_username, u.public_key as sender_public_key, u.subscription_tier as sender_subscription_tier
+		query = `SELECT m.id, m.conversation_id, m.sender_id, m.body, m.nonce, m.is_encrypted, m.sent_at, m.read_at, u.profile_picture as sender_profile_pic, u.username as sender_username, u.public_key as sender_public_key, u.subscription_tier as sender_subscription_tier
                   FROM messages m
                   JOIN users u ON m.sender_id = u.id
                   WHERE m.conversation_id = $1 AND m.id > $2
                   ORDER BY m.sent_at ASC, m.id ASC`
 		params = []any{convID, sinceID}
 	} else if lastID != "" && lastSentAt != "" {
-		query = `SELECT m.*, u.profile_picture as sender_profile_pic, u.username as sender_username, u.public_key as sender_public_key, u.subscription_tier as sender_subscription_tier
+		query = `SELECT m.id, m.conversation_id, m.sender_id, m.body, m.nonce, m.is_encrypted, m.sent_at, m.read_at, u.profile_picture as sender_profile_pic, u.username as sender_username, u.public_key as sender_public_key, u.subscription_tier as sender_subscription_tier
                   FROM messages m
                   JOIN users u ON m.sender_id = u.id
                   WHERE m.conversation_id = $1
@@ -167,7 +167,7 @@ func GetMessages(c *gin.Context) {
                   LIMIT $4`
 		params = []any{convID, lastSentAt, lastID, limit}
 	} else {
-		query = `SELECT m.*, u.profile_picture as sender_profile_pic, u.username as sender_username, u.public_key as sender_public_key, u.subscription_tier as sender_subscription_tier
+		query = `SELECT m.id, m.conversation_id, m.sender_id, m.body, m.nonce, m.is_encrypted, m.sent_at, m.read_at, u.profile_picture as sender_profile_pic, u.username as sender_username, u.public_key as sender_public_key, u.subscription_tier as sender_subscription_tier
                   FROM messages m
                   JOIN users u ON m.sender_id = u.id
                   WHERE m.conversation_id = $1
@@ -186,7 +186,8 @@ func GetMessages(c *gin.Context) {
 	messages := []map[string]any{}
 	for rows.Next() {
 		var (
-			id, convIDIn, senderID, body, nonce, profilePic, username, pubKey string
+			id                                                               int64
+			convIDIn, senderID, body, nonce, profilePic, username, pubKey    string
 			isEncrypted                                                       bool
 			sentAt                                                            time.Time
 			readAt                                                            *time.Time
@@ -194,7 +195,7 @@ func GetMessages(c *gin.Context) {
 		)
 		if err := rows.Scan(&id, &convIDIn, &senderID, &body, &nonce, &isEncrypted, &sentAt, &readAt, &profilePic, &username, &pubKey, &tier); err == nil {
 			messages = append(messages, map[string]any{
-				"id":                       id,
+				"id":                       strconv.FormatInt(id, 10),
 				"conversation_id":          convIDIn,
 				"sender_id":                senderID,
 				"body":                     body,
@@ -207,6 +208,8 @@ func GetMessages(c *gin.Context) {
 				"sender_public_key":        pubKey,
 				"sender_subscription_tier": tier,
 			})
+		} else {
+			fmt.Printf("Scan error in GetMessages: %v\n", err)
 		}
 	}
 

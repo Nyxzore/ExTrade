@@ -293,6 +293,7 @@ class InboxFragment : Fragment() {
                     Toast.makeText(requireContext(), json["message"]?.jsonPrimitive?.content ?: "Failed to load messages", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
+                android.util.Log.e("InboxFragment", "fetchConversations failed", e)
                 if (!isAdded) return@launch
                 binding.progressBar.visibility = View.GONE
                 Toast.makeText(requireContext(), "Error loading conversations", Toast.LENGTH_SHORT).show()

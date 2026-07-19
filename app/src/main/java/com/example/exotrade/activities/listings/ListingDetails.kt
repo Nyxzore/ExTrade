@@ -173,9 +173,12 @@ class ListingDetails : AppCompatActivity() {
                 Log.d("ListingDetails", "API Response: $response")
 
                 val json = Json.parseToJsonElement(response).jsonObject
+                Log.d("ListingDetails", "Raw status value: ${json["status"]}, full response: $response")
 
-                // Check status from the root object
-                if ("success" == json["status"]?.jsonPrimitive?.contentOrNull) {
+                val statusOk = json["status"]?.jsonPrimitive?.contentOrNull?.equals("success", ignoreCase = true) == true
+                val hasData = json["id"] != null && json["id"] !is kotlinx.serialization.json.JsonNull
+
+                if (statusOk || hasData) {
                     withContext(Dispatchers.Main) {
                         displayDetails(json)
                     }

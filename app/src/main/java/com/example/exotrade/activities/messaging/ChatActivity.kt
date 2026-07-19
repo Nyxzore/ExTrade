@@ -177,6 +177,7 @@ class ChatActivity : BaseActivity(), MessageAdapter.OnUserClickListener {
                     }
                 }
             } catch (e: Exception) {
+                android.util.Log.e("ChatActivity", "fetchMessages failed", e)
                 // Handle error
             }
         }
@@ -283,6 +284,7 @@ class ChatActivity : BaseActivity(), MessageAdapter.OnUserClickListener {
                     binding.etMessage.setText(text)
                 }
             } catch (e: Exception) {
+                android.util.Log.e("ChatActivity", "sendMessage failed", e)
                 messages.remove(optimisticMsg)
                 adapter.submitList(ArrayList(messages))
             }
@@ -319,7 +321,9 @@ class ChatActivity : BaseActivity(), MessageAdapter.OnUserClickListener {
         lifecycleScope.launch {
             try {
                 ExoTradeApplication.container.apiService.postForm<String>("messaging/mark_read", params)
-            } catch (e: Exception) {}
+            } catch (e: Exception) {
+                android.util.Log.e("ChatActivity", "markAsRead failed", e)
+            }
         }
     }
 
