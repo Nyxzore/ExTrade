@@ -239,13 +239,14 @@ func MarkRead(c *gin.Context) {
 }
 
 func StartOrGetConversation(c *gin.Context) {
-	userID, _ := c.Get("userID")
+	userIDVal, _ := c.Get("userID")
+	userID, _ := userIDVal.(string)
 	listingID := c.PostForm("listing_id")
-	sellerID := c.PostForm("seller_id")
+	sellerID := c.DefaultPostForm("seller_id", c.PostForm("target_user_id"))
 	listingKind := c.DefaultPostForm("listing_kind", "sale")
 
-	if listingID == "" || sellerID == "" {
-		utils.SendError(c, http.StatusBadRequest, "Listing ID and Seller ID are required", nil)
+	if sellerID == "" {
+		utils.SendError(c, http.StatusBadRequest, "Target user ID is required", nil)
 		return
 	}
 
@@ -262,6 +263,28 @@ func StartOrGetConversation(c *gin.Context) {
 	err := db.Pool.QueryRow(context.Background(), "SELECT username, profile_picture, public_key FROM users WHERE id = $1", sellerID).Scan(&otherUser.Username, &otherUser.ProfilePic, &otherUser.PublicKey)
 	if err != nil {
 		utils.SendError(c, http.StatusNotFound, "Seller not found", nil)
+		return
+	}
+
+	// Friend/DM path: open or create a conversation without a listing context
+	if listingID == "" {
+		u1, u2 := userID, sellerID
+		if u1 > u2 {
+			u1, u2 = u2, u1
+		}
+		var convID string
+		err = db.Pool.QueryRow(context.Background(), "SELECT id FROM conversations WHERE user_a_id = $1 AND user_b_id = $2", u1, u2).Scan(&convID)
+		if err != nil {
+			err = db.Pool.QueryRow(context.Background(), "INSERT INTO conversations (user_a_id, user_b_id) VALUES ($1, $2) RETURNING id", u1, u2).Scan(&convID)
+			if err != nil {
+				utils.SendError(c, http.StatusInternalServerError, "Failed to create conversation", nil)
+				return
+			}
+		}
+		utils.SendSuccess(c, "Conversation retrieved", map[string]any{
+			"conversation_id": convID,
+			"other_user":      otherUser,
+		})
 		return
 	}
 
@@ -340,7 +363,7 @@ func StartOrGetConversation(c *gin.Context) {
 		return
 	}
 
-	u1, u2 := userID.(string), sellerID
+	u1, u2 := userID, sellerID
 	if u1 > u2 {
 		u1, u2 = u2, u1
 	}

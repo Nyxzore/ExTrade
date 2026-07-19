@@ -9,6 +9,7 @@ import com.example.exotrade.data.SpeciesRepository
 import com.example.exotrade.utils.EncryptionManager
 import io.ktor.client.network.sockets.*
 import io.ktor.client.plugins.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,14 +50,20 @@ class LoginViewModel(
                 val response: String = apiService.postForm("auth/auth", params + ("mode" to "verify"))
                 val json = Json.parseToJsonElement(response).jsonObject
                 if (json["status"]?.jsonPrimitive?.content == "success") {
+                    sessionRepository.updateUserInfo(
+                        username = json["username"]?.jsonPrimitive?.content ?: sessionRepository.getUsername() ?: "",
+                        profilePic = sessionRepository.getProfilePic(),
+                        tier = json["subscription_tier"]?.jsonPrimitive?.int ?: sessionRepository.getSubscriptionTier(),
+                        isAdmin = json["is_admin"]?.jsonPrimitive?.content == "true"
+                    )
                     _sessionVerified.value = true
                 } else {
-                    sessionRepository.clearSession()
+                    sessionRepository.clearSession(isExpired = true)
                     _sessionVerified.value = false
                 }
             } catch (e: Exception) {
                 if (e is ClientRequestException && e.response.status == HttpStatusCode.Unauthorized) {
-                    sessionRepository.clearSession()
+                    sessionRepository.clearSession(isExpired = true)
                 }
                 _sessionVerified.value = false
             } finally {
@@ -96,10 +103,20 @@ class LoginViewModel(
                     _errorMessage.value = "Server is currently down (Invalid response)"
                 }
             } catch (e: Exception) {
-                _errorMessage.value = when (e) {
-                    is HttpRequestTimeoutException, is ConnectTimeoutException, is java.net.ConnectException -> 
-                        "Server is currently down (Unreachable)"
-                    else -> "Connection error"
+                if (e is ResponseException) {
+                    try {
+                        val errorBody = e.response.bodyAsText()
+                        val json = Json.parseToJsonElement(errorBody).jsonObject
+                        _errorMessage.value = json["message"]?.jsonPrimitive?.content ?: "Login failed"
+                    } catch (ex: Exception) {
+                        _errorMessage.value = "Login failed (${e.response.status.value})"
+                    }
+                } else {
+                    _errorMessage.value = when (e) {
+                        is HttpRequestTimeoutException, is ConnectTimeoutException, is java.net.ConnectException -> 
+                            "Server is currently down (Unreachable)"
+                        else -> "Connection error"
+                    }
                 }
             } finally {
                 _isLoading.value = false

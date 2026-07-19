@@ -5,7 +5,6 @@ import (
 	"exotrade-server/internal/db"
 	"exotrade-server/pkg/utils"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -18,8 +17,6 @@ import (
 func GetProfile(c *gin.Context) {
 	authenticatedUserID, _ := c.Get("userID")
 	targetUserID := c.DefaultPostForm("target_user_id", authenticatedUserID.(string))
-
-	log.Printf("DEBUG: GetProfile - authenticatedUserID: %s, targetUserID: %s", authenticatedUserID, targetUserID)
 
 	var (
 		username                                      string
@@ -35,7 +32,6 @@ func GetProfile(c *gin.Context) {
 	)
 
 	if err != nil {
-		log.Printf("DEBUG: GetProfile failed to find user %s: %v", targetUserID, err)
 		utils.SendError(c, http.StatusNotFound, "User not found", nil)
 		return
 	}
@@ -73,9 +69,7 @@ func GetProfile(c *gin.Context) {
 	rows, err := db.Pool.Query(context.Background(), listingsQuery, targetUserID)
 	listings := []map[string]any{}
 
-	if err != nil {
-		log.Printf("DEBUG: GetProfile listings query error for %s: %v", targetUserID, err)
-	} else {
+	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
 			var (
@@ -135,16 +129,17 @@ func GetProfile(c *gin.Context) {
 	}
 
 	utils.SendSuccess(c, "Profile fetched", map[string]any{
-		"username":          username,
-		"email":             displayEmail,
-		"profile_picture":   profilePicture,
-		"public_key":        publicKey,
-		"subscription_tier": subscriptionTier,
-		"is_admin":          isAdmin,
-		"whatsapp":          whatsapp,
-		"facebook":          facebook,
-		"instagram":         instagram,
-		"listings":          listings,
+		"username":           username,
+		"email":              displayEmail,
+		"profile_picture":    profilePicture,
+		"public_key":         publicKey,
+		"subscription_tier":  subscriptionTier,
+		"is_admin":           isAdmin,
+		"whatsapp":           whatsapp,
+		"facebook":           facebook,
+		"instagram":          instagram,
+		"listings":           listings,
+		"friendship_status":  friendshipStatusBetween(authenticatedUserID.(string), targetUserID),
 	})
 }
 
@@ -159,17 +154,13 @@ func UpdateProfile(c *gin.Context) {
 	facebook := c.PostForm("facebook")
 	instagram := c.PostForm("instagram")
 
-	log.Printf("DEBUG: UpdateProfile - userID: %s, username: %s, email: %s", userID, username, email)
-
 	if username == "" || email == "" {
-		log.Printf("DEBUG: UpdateProfile failed - missing username or email")
 		utils.SendError(c, http.StatusBadRequest, "Username and email are required", nil)
 		return
 	}
 
 	// Basic email validation
 	if !utils.IsValidEmail(email) {
-		log.Printf("DEBUG: UpdateProfile failed - invalid email format: %s", email)
 		utils.SendError(c, http.StatusBadRequest, "Invalid email format", nil)
 		return
 	}

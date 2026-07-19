@@ -37,6 +37,7 @@ class ProfileBottomSheet : BottomSheetDialogFragment() {
 
     private lateinit var session: SessionRepository
     private var userId: String? = null
+    private var isSelf: Boolean = false
     private val allFetchedListings = mutableListOf<Listing>()
 
     companion object {
@@ -69,7 +70,7 @@ class ProfileBottomSheet : BottomSheetDialogFragment() {
 
         binding.switchShowSold.setOnCheckedChangeListener { _, _ -> filterAndDisplayListings() }
 
-        val isSelf = userId == session.getUserUUID()
+        isSelf = userId == session.getUserUUID()
         binding.btnEditProfile.visibility = if (isSelf) View.VISIBLE else View.GONE
         binding.btnAddFriend.visibility = if (isSelf) View.GONE else View.VISIBLE
         binding.btnReportUser.visibility = if (isSelf) View.GONE else View.VISIBLE
@@ -83,7 +84,9 @@ class ProfileBottomSheet : BottomSheetDialogFragment() {
             dismiss()
         }
 
-        binding.btnAddFriend.setOnClickListener { addFriend() }
+        if (!isSelf) {
+            binding.btnAddFriend.setOnClickListener { addFriend() }
+        }
         binding.btnReportUser.setOnClickListener {
             com.example.exotrade.utils.ReportDialog.show(requireActivity(), "user", userId ?: "", null)
         }
@@ -109,11 +112,14 @@ class ProfileBottomSheet : BottomSheetDialogFragment() {
                     val picPath = json["profile_picture"]?.jsonPrimitive?.content
                     Helpers.loadImage(picPath, binding.imgProfilePicture, R.drawable.ic_person_24)
 
-                    val tier = json["subscription_tier"]?.jsonPrimitive?.int ?: 0
+                    val tierElement = json["subscription_tier"]
+                    val tier = if (tierElement != null && tierElement !is kotlinx.serialization.json.JsonNull) {
+                        tierElement.jsonPrimitive.int
+                    } else 0
 
-                    val whatsapp = json["whatsapp"]?.jsonPrimitive?.content
-                    val facebook = json["facebook"]?.jsonPrimitive?.content
-                    val instagram = json["instagram"]?.jsonPrimitive?.content
+                    val whatsapp = json["whatsapp"]?.takeUnless { it is kotlinx.serialization.json.JsonNull }?.jsonPrimitive?.content
+                    val facebook = json["facebook"]?.takeUnless { it is kotlinx.serialization.json.JsonNull }?.jsonPrimitive?.content
+                    val instagram = json["instagram"]?.takeUnless { it is kotlinx.serialization.json.JsonNull }?.jsonPrimitive?.content
 
                     SocialLinkUtils.bindProfileIcons(
                         requireActivity(),
@@ -160,8 +166,55 @@ class ProfileBottomSheet : BottomSheetDialogFragment() {
                         )
                     }
                     filterAndDisplayListings()
+                    updateFriendshipButton(json["friendship_status"]?.jsonPrimitive?.content ?: "none")
                 }
             } catch (e: Exception) {}
+        }
+    }
+
+    private fun updateFriendshipButton(status: String) {
+        if (!isAdded || isSelf) return
+        binding.btnAddFriend.isEnabled = true
+        binding.btnAddFriend.visibility = View.VISIBLE
+        when (status) {
+            "friends" -> {
+                binding.btnAddFriend.text = getString(R.string.friends)
+                binding.btnAddFriend.isEnabled = false
+                binding.btnAddFriend.setOnClickListener(null)
+            }
+            "pending_sent" -> {
+                binding.btnAddFriend.text = "Requested"
+                binding.btnAddFriend.isEnabled = false
+                binding.btnAddFriend.setOnClickListener(null)
+            }
+            "pending_received" -> {
+                binding.btnAddFriend.setText(R.string.accept)
+                binding.btnAddFriend.setOnClickListener { respondToFriendRequest() }
+            }
+            else -> {
+                binding.btnAddFriend.setText(R.string.add_friend)
+                binding.btnAddFriend.setOnClickListener { addFriend() }
+            }
+        }
+    }
+
+    private fun respondToFriendRequest() {
+        val targetId = userId ?: return
+        val params = session.authParams().toMutableMap()
+        params["requester_id"] = targetId
+
+        lifecycleScope.launch {
+            try {
+                val response: String = ExoTradeApplication.container.apiService.postForm("friends/accept_friend_request", params)
+                if (!isAdded) return@launch
+                val json = Json.parseToJsonElement(response).jsonObject
+                Toast.makeText(requireContext(), json["message"]?.jsonPrimitive?.content, Toast.LENGTH_SHORT).show()
+                if ("success" == json["status"]?.jsonPrimitive?.content) {
+                    updateFriendshipButton("friends")
+                }
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Action failed", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -197,10 +250,9 @@ class ProfileBottomSheet : BottomSheetDialogFragment() {
                 val response: String = ExoTradeApplication.container.apiService.postForm("friends/send_friend_request", params)
                 if (!isAdded) return@launch
                 val json = Json.parseToJsonElement(response).jsonObject
+                Toast.makeText(requireContext(), json["message"]?.jsonPrimitive?.content, Toast.LENGTH_SHORT).show()
                 if ("success" == json["status"]?.jsonPrimitive?.content) {
-                    Toast.makeText(requireContext(), "Friend request sent!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(requireContext(), json["message"]?.jsonPrimitive?.content, Toast.LENGTH_SHORT).show()
+                    updateFriendshipButton("pending_sent")
                 }
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "Failed to send friend request", Toast.LENGTH_SHORT).show()

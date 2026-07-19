@@ -9,10 +9,39 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// friendshipStatusBetween returns none | pending_sent | pending_received | friends | self
+func friendshipStatusBetween(viewerID, targetID string) string {
+	if viewerID == "" || targetID == "" {
+		return "none"
+	}
+	if viewerID == targetID {
+		return "self"
+	}
+	u1, u2 := viewerID, targetID
+	if u1 > u2 {
+		u1, u2 = u2, u1
+	}
+	var status, actionUserID string
+	err := db.Pool.QueryRow(context.Background(),
+		"SELECT status, action_user_id::text FROM friendships WHERE user_id1 = $1 AND user_id2 = $2",
+		u1, u2,
+	).Scan(&status, &actionUserID)
+	if err != nil {
+		return "none"
+	}
+	if status == "accepted" {
+		return "friends"
+	}
+	if actionUserID == viewerID {
+		return "pending_sent"
+	}
+	return "pending_received"
+}
+
 func GetFriends(c *gin.Context) {
 	userID, _ := c.Get("userID")
 
-	query := `SELECT u.id, u.username, u.profile_picture, u.subscription_tier
+	query := `SELECT u.id, u.username, u.profile_picture, COALESCE(u.subscription_tier, 0)
               FROM friendships f
               JOIN users u ON (f.user_id1 = $1 AND f.user_id2 = u.id)
                            OR (f.user_id2 = $1 AND f.user_id1 = u.id)
@@ -30,21 +59,23 @@ func GetFriends(c *gin.Context) {
 		var id, username string
 		var profilePic *string
 		var tier int
-		if err := rows.Scan(&id, &username, &profilePic, &tier); err == nil {
-			friends = append(friends, map[string]any{
-				"id":                id,
-				"username":          username,
-				"profile_pic":       profilePic,
-				"subscription_tier": tier,
-			})
+		if err := rows.Scan(&id, &username, &profilePic, &tier); err != nil {
+			continue
 		}
+		friends = append(friends, map[string]any{
+			"id":                id,
+			"username":          username,
+			"profile_pic":       profilePic,
+			"subscription_tier": tier,
+		})
 	}
 
 	utils.SendSuccess(c, "Friends fetched", map[string]any{"friends": friends})
 }
 
 func SendFriendRequest(c *gin.Context) {
-	userID, _ := c.Get("userID")
+	userIDVal, _ := c.Get("userID")
+	userID, _ := userIDVal.(string)
 	friendID := c.PostForm("target_user_id")
 
 	if friendID == "" {
@@ -52,12 +83,12 @@ func SendFriendRequest(c *gin.Context) {
 		return
 	}
 
-	if userID == friendID {
+	if userID == "" || userID == friendID {
 		utils.SendError(c, http.StatusBadRequest, "Cannot add yourself as a friend", nil)
 		return
 	}
 
-	u1, u2 := userID.(string), friendID
+	u1, u2 := userID, friendID
 	if u1 > u2 {
 		u1, u2 = u2, u1
 	}
@@ -173,7 +204,7 @@ func RemoveFriend(c *gin.Context) {
 func GetFriendRequests(c *gin.Context) {
 	userID, _ := c.Get("userID")
 
-	query := `SELECT u.id, u.username, u.profile_picture, u.subscription_tier
+	query := `SELECT u.id, u.username, u.profile_picture, COALESCE(u.subscription_tier, 0)
               FROM friendships f
               JOIN users u ON (f.user_id1 = u.id OR f.user_id2 = u.id)
               WHERE ((f.user_id1 = $1 OR f.user_id2 = $1) AND u.id != $1)
@@ -192,14 +223,15 @@ func GetFriendRequests(c *gin.Context) {
 		var id, username string
 		var profilePic *string
 		var tier int
-		if err := rows.Scan(&id, &username, &profilePic, &tier); err == nil {
-			requests = append(requests, map[string]any{
-				"id":                id,
-				"username":          username,
-				"profile_pic":       profilePic,
-				"subscription_tier": tier,
-			})
+		if err := rows.Scan(&id, &username, &profilePic, &tier); err != nil {
+			continue
 		}
+		requests = append(requests, map[string]any{
+			"id":                id,
+			"username":          username,
+			"profile_pic":       profilePic,
+			"subscription_tier": tier,
+		})
 	}
 
 	utils.SendSuccess(c, "Requests fetched", map[string]any{"requests": requests})
@@ -214,10 +246,15 @@ func SearchUsers(c *gin.Context) {
 		return
 	}
 
-	sql := `SELECT id, username, profile_picture, subscription_tier
-            FROM users
-            WHERE (username ILIKE $1 OR username % $3) AND id != $2
-            ORDER BY similarity(username, $3) DESC, subscription_tier DESC
+	sql := `SELECT u.id, u.username, u.profile_picture, COALESCE(u.subscription_tier, 0),
+                   f.status, f.action_user_id::text
+            FROM users u
+            LEFT JOIN friendships f ON (
+                (f.user_id1 = u.id AND f.user_id2 = $2) OR
+                (f.user_id2 = u.id AND f.user_id1 = $2)
+            )
+            WHERE (u.username ILIKE $1 OR u.username % $3) AND u.id != $2
+            ORDER BY similarity(u.username, $3) DESC, COALESCE(u.subscription_tier, 0) DESC
             LIMIT 20`
 
 	rows, err := db.Pool.Query(context.Background(), sql, "%"+query+"%", userID, query)
@@ -232,14 +269,32 @@ func SearchUsers(c *gin.Context) {
 		var id, username string
 		var profilePic *string
 		var tier int
-		if err := rows.Scan(&id, &username, &profilePic, &tier); err == nil {
-			users = append(users, map[string]any{
-				"id":                id,
-				"username":          username,
-				"profile_pic":       profilePic,
-				"subscription_tier": tier,
-			})
+		var status, actionUserID *string
+		if err := rows.Scan(&id, &username, &profilePic, &tier, &status, &actionUserID); err != nil {
+			continue
 		}
+		viewerID, _ := userID.(string)
+		friendshipStatus := "none"
+		if status != nil {
+			switch *status {
+			case "accepted":
+				friendshipStatus = "friends"
+			case "pending":
+				if actionUserID != nil && *actionUserID == viewerID {
+					friendshipStatus = "pending_sent"
+				} else {
+					friendshipStatus = "pending_received"
+				}
+			}
+		}
+		users = append(users, map[string]any{
+			"id":                id,
+			"username":          username,
+			"profile_pic":       profilePic,
+			"subscription_tier": tier,
+			"friendship_status": friendshipStatus,
+			"is_friend":         friendshipStatus == "friends",
+		})
 	}
 
 	utils.SendSuccess(c, "Results", map[string]any{"users": users})

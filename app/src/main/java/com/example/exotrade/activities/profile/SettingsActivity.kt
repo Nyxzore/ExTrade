@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import com.example.exotrade.ExoTradeApplication
 import com.example.exotrade.activities.BaseActivity
-import com.example.exotrade.activities.auth.Login
 import com.example.exotrade.databinding.ActivitySettingsBinding
 
 class SettingsActivity : BaseActivity() {
@@ -40,11 +39,7 @@ class SettingsActivity : BaseActivity() {
         }
 
         binding.btnLogout.setOnClickListener {
-            session.clearSession()
-            val intent = Intent(this, Login::class.java)
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
-            startActivity(intent)
-            finishAffinity()
+            session.clearSession(isExpired = false)
         }
     }
 }

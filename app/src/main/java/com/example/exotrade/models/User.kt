@@ -14,5 +14,7 @@ data class User(
     val whatsapp: String? = null,
     val facebook: String? = null,
     val instagram: String? = null,
-    val publicKey: String? = null
+    val publicKey: String? = null,
+    val friendshipStatus: String? = null,
+    val isFriend: Boolean = false
 )

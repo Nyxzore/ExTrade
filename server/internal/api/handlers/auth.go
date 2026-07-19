@@ -36,6 +36,46 @@ func AuthHandler(c *gin.Context) {
 		return
 	}
 
+	if mode == "verify" {
+		uuid := c.PostForm("uuid")
+		token := c.PostForm("auth_token")
+
+		if uuid == "" || token == "" {
+			utils.SendError(c, http.StatusBadRequest, "Session material missing", nil)
+			return
+		}
+
+		var isBanned bool
+		query := `SELECT u.is_banned FROM user_sessions s
+                  JOIN users u ON s.user_id = u.id
+                  WHERE s.user_id = $1 AND s.token = $2 AND s.expires_at > NOW()`
+		err := db.Pool.QueryRow(context.Background(), query, uuid, token).Scan(&isBanned)
+
+		if err != nil {
+			utils.SendError(c, http.StatusUnauthorized, "Invalid or expired session", nil)
+			return
+		}
+
+		if isBanned {
+			utils.SendError(c, http.StatusForbidden, "Your account has been banned.", nil)
+			return
+		}
+
+		// Return basic info for verification
+		var username string
+		var isAdmin bool
+		var tier int
+		db.Pool.QueryRow(context.Background(), "SELECT username, is_admin, subscription_tier FROM users WHERE id = $1", uuid).
+			Scan(&username, &isAdmin, &tier)
+
+		utils.SendSuccess(c, "Session verified", map[string]any{
+			"username":          username,
+			"is_admin":          isAdmin,
+			"subscription_tier": tier,
+		})
+		return
+	}
+
 	if mode == "login" {
 		var id string
 		var passwordHash string

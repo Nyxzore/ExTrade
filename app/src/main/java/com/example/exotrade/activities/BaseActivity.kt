@@ -30,17 +30,19 @@ abstract class BaseActivity : AppCompatActivity() {
     private fun observeLogoutEvents() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                ExoTradeApplication.container.sessionRepository.logoutEvents.collectLatest {
-                    handleLogout()
+                ExoTradeApplication.container.sessionRepository.logoutEvents.collectLatest { isExpired ->
+                    handleLogout(isExpired)
                 }
             }
         }
     }
 
-    private fun handleLogout() {
+    private fun handleLogout(isExpired: Boolean) {
         if (this is Login) return // Don't redirect from login to login
         
-        Toast.makeText(this, "Session expired, please log in again", Toast.LENGTH_SHORT).show()
+        if (isExpired) {
+            Toast.makeText(this, "Session expired, please log in again", Toast.LENGTH_SHORT).show()
+        }
         val intent = Intent(this, Login::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)

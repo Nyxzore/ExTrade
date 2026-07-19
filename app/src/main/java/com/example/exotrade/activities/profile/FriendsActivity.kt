@@ -23,6 +23,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.int
 
 /**
@@ -180,12 +181,17 @@ class FriendsActivity : BaseActivity() {
         val list = ArrayList<User>()
         arr?.forEach { element ->
             val u = element.jsonObject
+            val friendshipStatus = u["friendship_status"]?.takeUnless { it is kotlinx.serialization.json.JsonNull }?.jsonPrimitive?.content
+            val picEl = u["profile_pic"]
             list.add(
                 User(
                     id = u["id"]?.jsonPrimitive?.content,
                     username = u["username"]?.jsonPrimitive?.content,
-                    profilePic = u["profile_pic"]?.jsonPrimitive?.content,
-                    subscriptionTier = u["subscription_tier"]?.jsonPrimitive?.int ?: 0
+                    profilePic = if (picEl == null || picEl is kotlinx.serialization.json.JsonNull) null else picEl.jsonPrimitive.content,
+                    subscriptionTier = u["subscription_tier"]?.jsonPrimitive?.int ?: 0,
+                    friendshipStatus = friendshipStatus,
+                    isFriend = u["is_friend"]?.takeUnless { it is kotlinx.serialization.json.JsonNull }?.jsonPrimitive?.boolean
+                        ?: (friendshipStatus == "friends")
                 )
             )
         }

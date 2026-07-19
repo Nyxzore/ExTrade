@@ -28,11 +28,12 @@ class ApiService(private val sessionRepository: SessionRepository) {
         defaultRequest {
             url(Helpers.getBaseUrl())
         }
-        expectSuccess = true
+        // Business-logic errors return JSON with status/message; let callers read the body.
+        expectSuccess = false
         HttpResponseValidator {
-            handleResponseExceptionWithRequest { exception, _ ->
-                if (exception is ClientRequestException && exception.response.status == HttpStatusCode.Unauthorized) {
-                    sessionRepository.clearSession()
+            validateResponse { response ->
+                if (response.status == HttpStatusCode.Unauthorized) {
+                    sessionRepository.clearSession(isExpired = true)
                 }
             }
         }

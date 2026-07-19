@@ -12,10 +12,10 @@ import androidx.lifecycle.lifecycleScope
 import com.example.exotrade.ExoTradeApplication
 import com.example.exotrade.activities.MainHostActivity
 import com.example.exotrade.databinding.AuthActivityRegisterBinding
-import com.example.exotrade.utils.Helpers
 import com.example.exotrade.utils.ImageUtils
 import com.example.exotrade.data.SessionRepository
-import com.example.exotrade.data.SpeciesRepository
+import io.ktor.client.plugins.ResponseException
+import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -176,7 +176,18 @@ class CreateAccount : AppCompatActivity() {
                     Toast.makeText(this@CreateAccount, message, Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(this@CreateAccount, "Error connecting to server", Toast.LENGTH_SHORT).show()
+                if (e is ResponseException) {
+                    try {
+                        val errorBody = e.response.bodyAsText()
+                        val json = Json.parseToJsonElement(errorBody).jsonObject
+                        val message = json["message"]?.jsonPrimitive?.content ?: "Registration failed"
+                        Toast.makeText(this@CreateAccount, message, Toast.LENGTH_SHORT).show()
+                    } catch (ex: Exception) {
+                        Toast.makeText(this@CreateAccount, "Registration failed (${e.response.status.value})", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(this@CreateAccount, "Error connecting to server", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }

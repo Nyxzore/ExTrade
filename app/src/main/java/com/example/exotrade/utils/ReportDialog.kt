@@ -60,8 +60,15 @@ object ReportDialog {
         val adapter = ArrayAdapter(context, android.R.layout.simple_list_item_1, reasons)
         etReason.setAdapter(adapter)
 
+        val title = when (targetType) {
+            "user" -> "Report User"
+            "listing" -> "Report Listing"
+            "breeding" -> "Report Breeding Listing"
+            else -> "Report"
+        }
+
         val dialog = MaterialAlertDialogBuilder(context)
-            .setTitle("Report Item")
+            .setTitle(title)
             .setView(view)
             .setPositiveButton("Submit Report", null) // Handle manually to prevent close on error
             .setNegativeButton("Cancel") { d, _ -> d.dismiss() }

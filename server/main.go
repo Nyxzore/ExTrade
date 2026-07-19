@@ -71,7 +71,7 @@ func main() {
 			protected.POST("/breeding/get_my_breeding_status", handlers.GetMyBreedingStatus)
 			protected.POST("/breeding/find_breeding_matches", handlers.FindBreedingMatches)
 			protected.POST("/breeding/get_breeding_listings", handlers.GetBreedingListings)
-			protected.GET("/friends/get_friends", handlers.GetFriends)
+			protected.POST("/friends/get_friends", handlers.GetFriends)
 			protected.POST("/friends/send_friend_request", handlers.SendFriendRequest)
 			protected.POST("/friends/accept_friend_request", handlers.AcceptFriendRequest)
 			protected.POST("/friends/decline_friend_request", handlers.DeclineFriendRequest)

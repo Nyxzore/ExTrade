@@ -158,6 +158,7 @@ class Profile : BaseActivity() {
                         )
                     }
                     filterAndDisplayListings()
+                    updateFriendshipButton(json["friendship_status"]?.jsonPrimitive?.content ?: "none")
                 } else {
                     val msg = json["message"]?.jsonPrimitive?.content ?: "Unknown error"
                     Toast.makeText(this@Profile, "Error: $msg", Toast.LENGTH_SHORT).show()
@@ -195,6 +196,50 @@ class Profile : BaseActivity() {
         return true
     }
 
+    private fun updateFriendshipButton(status: String) {
+        binding.btnAddFriend.isEnabled = true
+        binding.btnAddFriend.visibility = View.VISIBLE
+        when (status) {
+            "friends" -> {
+                binding.btnAddFriend.text = getString(R.string.friends)
+                binding.btnAddFriend.isEnabled = false
+                binding.btnAddFriend.setOnClickListener(null)
+            }
+            "pending_sent" -> {
+                binding.btnAddFriend.text = "Requested"
+                binding.btnAddFriend.isEnabled = false
+                binding.btnAddFriend.setOnClickListener(null)
+            }
+            "pending_received" -> {
+                binding.btnAddFriend.setText(R.string.accept)
+                binding.btnAddFriend.setOnClickListener { respondToFriendRequest(true) }
+            }
+            else -> {
+                binding.btnAddFriend.setText(R.string.add_friend)
+                binding.btnAddFriend.setOnClickListener { addFriend() }
+            }
+        }
+    }
+
+    private fun respondToFriendRequest(accept: Boolean) {
+        val params = session.authParams().toMutableMap()
+        params["requester_id"] = viewUserId ?: ""
+        val endpoint = if (accept) "friends/accept_friend_request" else "friends/decline_friend_request"
+
+        lifecycleScope.launch {
+            try {
+                val response: String = ExoTradeApplication.container.apiService.postForm(endpoint, params)
+                val json = Json.parseToJsonElement(response).jsonObject
+                Toast.makeText(this@Profile, json["message"]?.jsonPrimitive?.content, Toast.LENGTH_SHORT).show()
+                if ("success" == json["status"]?.jsonPrimitive?.content) {
+                    fetchProfileData()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this@Profile, "Action failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     private fun addFriend() {
         val params = session.authParams().toMutableMap()
         params["target_user_id"] = viewUserId ?: ""
@@ -203,10 +248,9 @@ class Profile : BaseActivity() {
             try {
                 val response: String = ExoTradeApplication.container.apiService.postForm("friends/send_friend_request", params)
                 val json = Json.parseToJsonElement(response).jsonObject
+                Toast.makeText(this@Profile, json["message"]?.jsonPrimitive?.content, Toast.LENGTH_SHORT).show()
                 if ("success" == json["status"]?.jsonPrimitive?.content) {
-                    Toast.makeText(this@Profile, "Friend request sent!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this@Profile, json["message"]?.jsonPrimitive?.content, Toast.LENGTH_SHORT).show()
+                    updateFriendshipButton("pending_sent")
                 }
             } catch (e: Exception) {
                 Toast.makeText(this@Profile, "Failed to send friend request", Toast.LENGTH_SHORT).show()

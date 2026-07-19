@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.example.exotrade.ExoTradeApplication
 import com.example.exotrade.activities.BaseActivity
 import com.example.exotrade.activities.MainHostActivity
 import com.example.exotrade.databinding.AuthActivityLoginBinding
@@ -28,17 +29,28 @@ class Login : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        val session = ExoTradeApplication.container.sessionRepository
+        if (session.isLoggedIn() && session.isRememberMe()) {
+            goToMainPage()
+            return
+        }
+
         binding = AuthActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         initViews()
         observeViewModel()
         
-        // Check for existing session
-        viewModel.verifySession()
+        if (session.isLoggedIn()) {
+            viewModel.verifySession()
+        }
     }
 
     private fun initViews() {
+        val session = ExoTradeApplication.container.sessionRepository
+        binding.etUsername.setText(session.getUsername() ?: "")
+        binding.cbRememberMe.isChecked = session.isRememberMe()
+
         // Optimistic performance: preload species
         viewModel.preloadSpecies()
 

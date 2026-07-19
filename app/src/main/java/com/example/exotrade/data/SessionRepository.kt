@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 class SessionRepository(context: Context) {
     private val prefs = context.getSharedPreferences("exotrade_prefs", Context.MODE_PRIVATE)
 
-    private val _logoutEvents = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    private val _logoutEvents = MutableSharedFlow<Boolean>(extraBufferCapacity = 1)
     val logoutEvents = _logoutEvents.asSharedFlow()
 
     fun isLoggedIn(): Boolean = prefs.getBoolean("is_logged_in", false)
@@ -57,8 +57,14 @@ class SessionRepository(context: Context) {
             .apply()
     }
 
-    fun clearSession() {
-        prefs.edit().clear().apply()
-        _logoutEvents.tryEmit(Unit)
+    fun clearSession(isExpired: Boolean = false) {
+        prefs.edit()
+            .remove("user_uuid")
+            .remove("auth_token")
+            .remove("is_logged_in")
+            .remove("identity_private_key")
+            .remove("identity_public_key")
+            .apply()
+        _logoutEvents.tryEmit(isExpired)
     }
 }

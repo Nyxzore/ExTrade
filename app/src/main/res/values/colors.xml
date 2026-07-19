@@ -14,4 +14,6 @@
     <color name="orange_primary">#FFF57C00</color>
     <color name="orange_primary_dark">#FFE64A19</color>
     <color name="nav_item_tint">#FF757575</color>
+    <color name="dark_neutral_container">#2C2C2C</color>
+    <color name="dark_neutral_surface">#1A1A1A</color>
 </resources>
