@@ -130,15 +130,6 @@ object Helpers {
         if (nav == null) return
         nav.itemIconTintList = null 
         nav.itemTextColor = ContextCompat.getColorStateList(nav.context, R.color.nav_item_tint)
-        
-        // Initial tint for everything except profile
-        val tint = ContextCompat.getColorStateList(nav.context, R.color.nav_item_tint)
-        for (i in 0 until nav.menu.size()) {
-            val item = nav.menu.getItem(i)
-            if (item.itemId != R.id.nav_profile) {
-                item.icon?.mutate()?.setTintList(tint)
-            }
-        }
     }
 
     /**
@@ -152,10 +143,14 @@ object Helpers {
         val session = ExoTradeApplication.container.sessionRepository
         val profilePic = session.getProfilePic()
         val tier = session.getSubscriptionTier()
-        val tint = ContextCompat.getColorStateList(nav.context, R.color.nav_item_tint)
 
         if (profilePic.isNullOrEmpty() || "null".equals(profilePic, ignoreCase = true)) {
-            profileItem.icon?.mutate()?.setTintList(tint)
+            // Revert to the selector drawable if no PFP is set
+            if (profileItem.icon !is BitmapDrawable) {
+                // Already using the selector or default icon
+                return
+            }
+            profileItem.icon = ContextCompat.getDrawable(nav.context, R.drawable.nav_person_icon)
             return
         }
 
@@ -206,7 +201,8 @@ object Helpers {
                 }
 
                 override fun onLoadFailed(errorDrawable: Drawable?) {
-                    profileItem.icon?.mutate()?.setTintList(tint)
+                    // Revert to default selector if loading fails
+                    profileItem.icon = ContextCompat.getDrawable(nav.context, R.drawable.nav_person_icon)
                 }
                 override fun onLoadCleared(placeholder: Drawable?) {}
             })
